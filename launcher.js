@@ -10,16 +10,13 @@ let execPath = process.execPath;
 let envPath = process.env.PATH || '';
 
 if (major < 18) {
-  if (fs.existsSync(node20Exe)) {
+  if (process.platform === 'win32' && fs.existsSync(node20Exe)) {
     console.log(`[SAI Engine] Node ${process.version} detected (Next.js 14 requires >= v18.17.0).`);
     console.log(`[SAI Engine] Auto-switching to installed Node 20: ${node20Exe}\n`);
     execPath = node20Exe;
     envPath = `${node20Dir};${envPath}`;
   } else {
-    console.error(`\n❌ Error: Next.js 14 requires Node.js >= v18.17.0.`);
-    console.error(`Current Node version: ${process.version}`);
-    console.error(`Please update your Node.js or add Node 18+ to your PATH.\n`);
-    process.exit(1);
+    console.warn(`[SAI Engine] Warning: Next.js 14 requires Node >= 18. Current: ${process.version}`);
   }
 }
 

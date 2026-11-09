@@ -2,6 +2,9 @@
   "name": "sai-badminton",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "node launcher.js",
     "build": "node launcher.js build",
