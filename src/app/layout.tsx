@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Providers } from '@/components/providers';
-import { Navbar } from '@/components/Navbar';
-import { AnnouncementBanner } from '@/components/AnnouncementBanner';
+import { Providers } from '../components/providers';
+import { Navbar } from '../components/Navbar';
+import { AnnouncementBanner } from '../components/AnnouncementBanner';
 
 export const metadata: Metadata = {
   title: 'SAI Badminton Championship 2024 | Management System',

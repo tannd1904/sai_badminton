@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSocket } from '@/lib/socket-client';
+import { useSocket } from '../../lib/socket-client';
 import { Trophy, Medal, Award, Flame, ChevronRight, RefreshCw, GitBranch, Users } from 'lucide-react';
-import { GroupStandingItem, MatchData, TeamData } from '@/types';
-import { useLanguage } from '@/lib/i18n';
+import { GroupStandingItem, MatchData, TeamData } from '../../types';
+import { useLanguage } from '../../lib/i18n';
 
 export default function StandingsPage() {
   const { subscribeToScore, subscribeToMatchStatus } = useSocket();

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSocket } from '@/lib/socket-client';
+import { useSocket } from '../lib/socket-client';
 import { Bell, X } from 'lucide-react';
 
 export function AnnouncementBanner() {

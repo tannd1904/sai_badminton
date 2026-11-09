@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSocket } from '@/lib/socket-client';
+import { useSocket } from '../../lib/socket-client';
 import {
   Calendar,
   AlertTriangle,
@@ -24,7 +24,7 @@ import {
   Search,
   Sliders,
 } from 'lucide-react';
-import { MatchData, ConflictViolation, TeamData, PlayerData } from '@/types';
+import { MatchData, ConflictViolation, TeamData, PlayerData } from '../../types';
 
 export default function AdminPage() {
   const { data: session } = useSession();

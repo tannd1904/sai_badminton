@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MatchData } from '@/types';
+import { MatchData } from '../types';
 import { Clock, Shield, Users, Trophy } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n';
+import { useLanguage } from '../lib/i18n';
 
 interface CourtCardProps {
   courtNumber: number;

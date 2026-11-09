@@ -18,9 +18,9 @@ import {
   WifiOff,
   Globe,
 } from 'lucide-react';
-import { useSocket } from '@/lib/socket-client';
-import { soundManager } from '@/lib/sound';
-import { useLanguage } from '@/lib/i18n';
+import { useSocket } from '../lib/socket-client';
+import { soundManager } from '../lib/sound';
+import { useLanguage } from '../lib/i18n';
 
 export function Navbar() {
   const pathname = usePathname();

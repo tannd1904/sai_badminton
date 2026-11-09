@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSocket } from '@/lib/socket-client';
-import { MatchData } from '@/types';
+import { useSocket } from '../../lib/socket-client';
+import { MatchData } from '../../types';
 import { Maximize2, Minimize2, Tv, Clock, Trophy } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n';
+import { useLanguage } from '../../lib/i18n';
 
 export default function TVScoreboardPage() {
   const { t, locale } = useLanguage();

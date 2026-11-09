@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSocket } from '@/lib/socket-client';
-import { soundManager } from '@/lib/sound';
+import { useSocket } from '../../lib/socket-client';
+import { soundManager } from '../../lib/sound';
 import {
   RotateCcw,
   ArrowLeftRight,
@@ -19,8 +19,8 @@ import {
   RefreshCw,
   History,
 } from 'lucide-react';
-import { MatchData, AuditActionType } from '@/types';
-import { useLanguage } from '@/lib/i18n';
+import { MatchData, AuditActionType } from '../../types';
+import { useLanguage } from '../../lib/i18n';
 
 export default function RefereePage() {
   const { data: session } = useSession();

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { checkScheduleConflicts } from '@/lib/conflict-checker';
-import { publishEvent, CHANNELS } from '@/lib/redis';
+import { prisma } from '../../../../lib/prisma';
+import { checkScheduleConflicts } from '../../../../lib/conflict-checker';
+import { publishEvent, CHANNELS } from '../../../../lib/redis';
 import { Category, RoundType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';

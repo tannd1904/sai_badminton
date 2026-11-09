@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 import { Category, GroupName, MatchStatus, RoundType } from '@prisma/client';
-import { GroupStandingItem } from '@/types';
+import { GroupStandingItem } from '../../../types';
 
 export const dynamic = 'force-dynamic';
 

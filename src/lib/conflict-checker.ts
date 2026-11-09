@@ -1,5 +1,5 @@
 import { Category, RulesMode } from '@prisma/client';
-import { ConflictViolation } from '@/types';
+import { ConflictViolation } from '../types';
 
 interface MatchScheduleItem {
   id: string;

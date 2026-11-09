@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { publishEvent, CHANNELS } from '@/lib/redis';
+import { prisma } from '../../../../lib/prisma';
+import { publishEvent, CHANNELS } from '../../../../lib/redis';
 
 export async function GET(
   req: NextRequest,

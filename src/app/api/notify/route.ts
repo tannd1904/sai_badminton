@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMatchAnnouncementWebhook } from '@/lib/webhook';
-import { publishEvent, CHANNELS } from '@/lib/redis';
+import { sendMatchAnnouncementWebhook } from '../../../lib/webhook';
+import { publishEvent, CHANNELS } from '../../../lib/redis';
 
 export async function POST(req: NextRequest) {
   try {
