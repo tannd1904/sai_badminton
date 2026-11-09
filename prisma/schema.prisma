@@ -1,0 +1,177 @@
+// Prisma Schema for SAI Badminton Championship Management System (SAI-BCS)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORGANIZER
+  REFEREE
+  SPECTATOR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Category {
+  XD
+  MD
+}
+
+enum GroupName {
+  A
+  B
+}
+
+enum RoundType {
+  GROUP
+  SEMI
+  BRONZE
+  FINAL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum RulesMode {
+  SINGLE_SET_10MIN
+  BO3
+}
+
+enum AuditActionType {
+  ADD_POINT
+  SUBTRACT_POINT
+  SWITCH_COURT
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  role         Role      @default(SPECTATOR)
+  passwordHash String
+  avatar       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  player       Player?
+  refereedMatches Match[] @relation("RefereeMatches")
+
+  @@map("users")
+}
+
+model Player {
+  id          String   @id @default(uuid())
+  name        String
+  gender      Gender
+  pool        Int      // 1: Men (MD & XD), 2: Men (MD only), 3: Women (XD only)
+  powerRating Int      @default(50) // 0 - 100
+  isSaiStaff  Boolean  @default(true)
+  department  String?  @default("SAI Digital")
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teamsAsPlayer1 Team[] @relation("Player1Relation")
+  teamsAsPlayer2 Team[] @relation("Player2Relation")
+
+  @@map("players")
+}
+
+model Team {
+  id          String    @id @default(uuid())
+  teamCode    String    @unique // e.g., XD1, MD2
+  category    Category  // XD or MD
+  groupName   GroupName // A or B
+  player1Id   String
+  player1     Player    @relation("Player1Relation", fields: [player1Id], references: [id])
+  player2Id   String
+  player2     Player    @relation("Player2Relation", fields: [player2Id], references: [id])
+  totalPower  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  matchesAsTeamA Match[] @relation("TeamAMatches")
+  matchesAsTeamB Match[] @relation("TeamBMatches")
+  matchesWon     Match[] @relation("WinnerMatches")
+  auditLogsScored ScoreAuditLog[]
+
+  @@map("teams")
+}
+
+model Match {
+  id                  String       @id @default(uuid())
+  matchCode           String       @unique // e.g., M-XD-A-01, M-PLAYOFF-01
+  category            Category
+  roundType           RoundType    @default(GROUP)
+  courtNumber         Int          @default(1) // 1, 2, 3
+  refereeId           String?
+  referee             User?        @relation("RefereeMatches", fields: [refereeId], references: [id], onDelete: SetNull)
+  teamAId             String
+  teamA               Team         @relation("TeamAMatches", fields: [teamAId], references: [id])
+  teamBId             String
+  teamB               Team         @relation("TeamBMatches", fields: [teamBId], references: [id])
+  status              MatchStatus  @default(SCHEDULED)
+  rulesMode           RulesMode    @default(SINGLE_SET_10MIN)
+  winnerTeamId        String?
+  winnerTeam          Team?        @relation("WinnerMatches", fields: [winnerTeamId], references: [id], onDelete: SetNull)
+  startTime           DateTime?
+  endTime             DateTime?
+  courtSideSwitched   Boolean      @default(false)
+  currentSet          Int          @default(1)
+  timerRemainingSeconds Int?       @default(600) // 10 minutes default for group stage
+  timerIsRunning      Boolean      @default(false)
+  orderIndex          Int          @default(0)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  sets                MatchSet[]
+  auditLogs           ScoreAuditLog[]
+
+  @@index([courtNumber, status])
+  @@index([category, roundType])
+  @@map("matches")
+}
+
+model MatchSet {
+  id          String   @id @default(uuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setNumber   Int      // 1, 2, 3
+  teamAScore  Int      @default(0)
+  teamBScore  Int      @default(0)
+  isFinished  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([matchId, setNumber])
+  @@map("match_sets")
+}
+
+model ScoreAuditLog {
+  id             String          @id @default(uuid())
+  matchId        String
+  match          Match           @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setNumber      Int
+  scoringTeamId  String?
+  scoringTeam    Team?           @relation(fields: [scoringTeamId], references: [id], onDelete: SetNull)
+  actionType     AuditActionType // ADD_POINT, SUBTRACT_POINT, SWITCH_COURT
+  scoreSnapshotA Int
+  scoreSnapshotB Int
+  timestamp      DateTime        @default(now())
+
+  @@index([matchId, timestamp])
+  @@map("score_audit_logs")
+}

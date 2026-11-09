@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a192f;
+  --foreground: #f8fafc;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Court Grid Background */
+.court-bg {
+  background-color: #081221;
+  background-image: 
+    linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Badges and Glows */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.35);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+}
+
+.glow-court {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+}
+
+/* Micro-animations */
+@keyframes scorePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.animate-score-pop {
+  animation: scorePop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
