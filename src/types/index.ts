@@ -130,3 +130,4 @@ export interface LiveScorePayload {
   timerIsRunning?: boolean;
   auditLog?: ScoreAuditLogData;
 }
+

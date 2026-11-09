@@ -270,3 +270,4 @@ function startTimeCheck(currentStart: Date | null, status: MatchStatus) {
   }
   return {};
 }
+

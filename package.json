@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "node launcher.js",
     "build": "next build",
-    "start": "NODE_ENV=production tsx server.ts",
+    "start": "node launcher.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -41,3 +41,4 @@
     "typescript": "^5.6.2"
   }
 }
+

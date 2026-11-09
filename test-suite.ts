@@ -187,3 +187,4 @@ runTestSuite()
     await redisPub.quit();
     await redisSub.quit();
   });
+

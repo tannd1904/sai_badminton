@@ -244,3 +244,4 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
     </div>
   );
 }
+

@@ -153,3 +153,4 @@ The project includes an automated test harness (`test-suite.ts`) validating:
 - ✅ **Rest Buffer Violation Detection:** Accurately catches rest gaps < 10 minutes.
 - ✅ **Redis Pub/Sub Latency:** Verified sub-10ms pub/sub loopback roundtrip.
 - ✅ **Tournament Schedule Validation:** The default seeded schedule is verified **100% collision-free (0 conflicts)**.
+

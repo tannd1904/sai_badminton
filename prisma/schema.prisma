@@ -175,3 +175,4 @@ model ScoreAuditLog {
   @@index([matchId, timestamp])
   @@map("score_audit_logs")
 }
+
