@@ -26,6 +26,23 @@ const cmd = args[0] || 'dev';
 
 let child;
 if (cmd === 'build') {
+  const prismaCli = path.join(__dirname, 'node_modules', 'prisma', 'build', 'index.js');
+  if (fs.existsSync(prismaCli)) {
+    try {
+      console.log('[SAI Engine] Generating Prisma Client...');
+      const { execFileSync } = require('child_process');
+      execFileSync(execPath, [prismaCli, 'generate'], {
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          PATH: envPath,
+        },
+      });
+    } catch (e) {
+      console.warn('[SAI Engine] Warning: prisma generate failed, continuing with build...');
+    }
+  }
+
   const nextCli = path.join(__dirname, 'node_modules', 'next', 'dist', 'bin', 'next');
   child = spawn(execPath, [nextCli, 'build'], {
     stdio: 'inherit',
