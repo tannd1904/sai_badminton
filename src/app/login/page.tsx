@@ -25,7 +25,11 @@ export default function LoginPage() {
 
     setLoading(false);
     if (res?.error) {
-      setError('Invalid email or password.');
+      if (res.error.includes('Database server is offline')) {
+        setError('⚠️ PostgreSQL Database is offline at localhost:5432. Please start Docker Desktop (or run start-db.bat).');
+      } else {
+        setError('Invalid email or password (or database at localhost:5432 is offline).');
+      }
     } else {
       router.push('/');
       router.refresh();
@@ -45,7 +49,7 @@ export default function LoginPage() {
       router.push(demoEmail.startsWith('referee') ? '/referee' : demoEmail.startsWith('admin') || demoEmail.startsWith('organizer') ? '/admin' : '/');
       router.refresh();
     } else {
-      setError('Quick login failed');
+      setError('⚠️ Cannot connect to PostgreSQL at localhost:5432. Please start Docker Desktop (or run start-db.bat).');
     }
   };
 

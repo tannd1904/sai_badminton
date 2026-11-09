@@ -37,3 +37,4 @@ const child = spawn(execPath, [tsxCli, 'server.ts'], {
 child.on('exit', (code) => {
   process.exit(code || 0);
 });
+

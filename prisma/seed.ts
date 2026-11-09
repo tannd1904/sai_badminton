@@ -235,7 +235,7 @@ async function main() {
   // Round 1: T0 vs T1, T2 vs T3
   // Round 2: T0 vs T2, T1 vs T3
   // Round 3: T0 vs T3, T1 vs T2
-  
+
   const generatePairs = (teams: string[]) => [
     [teams[0], teams[1]],
     [teams[2], teams[3]],
@@ -256,7 +256,7 @@ async function main() {
   // In each slot, Court 1, Court 2, Court 3 run simultaneously.
   // Crucial: Pool 1 players must NOT play concurrently in the same slot,
   // AND must have at least 1 slot buffer (15 min >= 10 min required) between their matches!
-  
+
   // Let's schedule carefully by balancing XD and MD matches:
   // Slots:
   // Slot 0 (09:00):

@@ -10,3 +10,4 @@ Write-Host "Active Node version: $(node -v)" -ForegroundColor Green
 Write-Host "Starting server on http://localhost:3000 ..." -ForegroundColor Cyan
 
 npm run dev
+

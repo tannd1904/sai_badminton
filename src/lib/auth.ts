@@ -24,26 +24,35 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password required');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase().trim() },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.toLowerCase().trim() },
+          });
 
-        if (!user || !user.passwordHash) {
-          throw new Error('Invalid credentials');
+          if (!user || !user.passwordHash) {
+            throw new Error('Invalid credentials');
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!isValid) {
+            throw new Error('Invalid credentials');
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            avatar: user.avatar,
+          };
+        } catch (error: any) {
+          if (error.message?.includes("Can't reach database server") || error.code === 'P1001') {
+            console.error('\n❌ [PostgreSQL Connection Error] Database server at localhost:5432 is offline!');
+            console.error('👉 Please start Docker Desktop to enable the PostgreSQL & Redis containers.\n');
+            throw new Error('Database server is offline. Please launch Docker Desktop.');
+          }
+          throw error;
         }
-
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!isValid) {
-          throw new Error('Invalid credentials');
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          avatar: user.avatar,
-        };
       },
     }),
   ],

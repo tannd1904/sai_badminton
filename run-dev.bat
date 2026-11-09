@@ -9,3 +9,4 @@ node -v
 echo Starting real-time development server (Next.js + Socket.io + Redis)...
 npm run dev
 pause
+
