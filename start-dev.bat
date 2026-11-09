@@ -12,3 +12,4 @@ echo (Node 20 automatic resolution via launcher.js)
 echo.
 node launcher.js
 pause
+

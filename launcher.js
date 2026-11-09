@@ -46,6 +46,16 @@ if (cmd === 'build') {
       PATH: envPath,
     },
   });
+} else if (cmd === 'start') {
+  const tsxCli = path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  child = spawn(execPath, [tsxCli, 'server.ts'], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      PATH: envPath,
+    },
+  });
 } else {
   // Find tsx binary
   const tsxCli = path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');

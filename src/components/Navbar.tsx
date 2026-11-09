@@ -83,6 +83,7 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   isActive
                     ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
@@ -159,6 +160,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/login"
+              prefetch={true}
               className="flex items-center gap-1.5 rounded-lg bg-sai-navy-800 hover:bg-sai-navy-700 border border-slate-700 px-3 py-1.5 text-xs font-semibold text-white transition-all shadow"
             >
               <LogIn className="h-3.5 w-3.5 text-sai-yellow" />
@@ -177,6 +179,7 @@ export function Navbar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               className={`flex flex-col items-center gap-1 px-3 py-1 rounded-md text-[10px] font-medium ${
                 isActive ? 'text-sai-cyan font-bold' : 'text-slate-400 hover:text-slate-200'
               }`}

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node launcher.js",
     "build": "node launcher.js build",
-    "start": "node launcher.js",
+    "start": "node launcher.js start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

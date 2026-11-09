@@ -727,9 +727,8 @@ export default function AdminPage() {
                     <th className="py-2.5 px-3">Giới tính</th>
                     <th className="py-2.5 px-3">Nhóm (Pool)</th>
                     <th className="py-2.5 px-3">Nội dung đủ điều kiện</th>
-                    <th className="py-2.5 px-3 text-center">Điểm đánh giá (Power)</th>
                     <th className="py-2.5 px-3">Đơn vị / Phòng ban</th>
-                    <th className="py-2.5 px-3 text-right">Điều chỉnh điểm</th>
+                    <th className="py-2.5 px-3 text-center">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -769,27 +768,12 @@ export default function AdminPage() {
                           ? 'Chỉ chơi Đôi Nam (MD)'
                           : 'Chỉ chơi Đôi Nam Nữ (XD)'}
                       </td>
-                      <td className="py-3 px-3 text-center font-mono font-black text-sm text-sai-yellow">
-                        {pl.powerRating}
-                      </td>
                       <td className="py-3 px-3 text-slate-400">{pl.department || 'SAI Digital'}</td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            onClick={() => handleAdjustPower(pl.id, pl.powerRating, -5)}
-                            className="h-7 w-7 rounded-lg bg-slate-800 border border-slate-700 font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center justify-center text-xs"
-                            title="Giảm 5 điểm"
-                          >
-                            -5
-                          </button>
-                          <button
-                            onClick={() => handleAdjustPower(pl.id, pl.powerRating, 5)}
-                            className="h-7 w-7 rounded-lg bg-slate-800 border border-slate-700 font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center justify-center text-xs"
-                            title="Tăng 5 điểm"
-                          >
-                            +5
-                          </button>
-                        </div>
+                      <td className="py-3 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          <Check className="h-3 w-3" />
+                          <span>Sẵn sàng</span>
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -874,9 +858,6 @@ export default function AdminPage() {
                       </span>
                       <span className="font-extrabold text-white text-sm">{t.player1.name}</span>
                     </div>
-                    <span className="font-mono font-bold text-sai-cyan text-xs">
-                      {t.player1.powerRating} pts
-                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
@@ -886,14 +867,6 @@ export default function AdminPage() {
                       </span>
                       <span className="font-extrabold text-white text-sm">{t.player2.name}</span>
                     </div>
-                    <span className="font-mono font-bold text-sai-yellow text-xs">
-                      {t.player2.powerRating} pts
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800 font-bold text-xs">
-                    <span className="text-slate-400">Tổng điểm cặp đấu (Combined Power):</span>
-                    <span className="font-mono text-emerald-400 text-sm font-black">{t.totalPower} pts</span>
                   </div>
                 </div>
               </div>
@@ -902,10 +875,6 @@ export default function AdminPage() {
 
           {/* Edit Pairing Modal */}
           {editingTeam && (() => {
-            const p1Obj = players.find((p) => p.id === selectedP1);
-            const p2Obj = players.find((p) => p.id === selectedP2);
-            const calculatedTotalPower = (p1Obj?.powerRating || 0) + (p2Obj?.powerRating || 0);
-
             return (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
                 <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
@@ -927,7 +896,7 @@ export default function AdminPage() {
                           .filter((p) => p.pool === 1)
                           .map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.name} (Điểm: {p.powerRating})
+                              {p.name}
                             </option>
                           ))}
                       </select>
@@ -946,17 +915,10 @@ export default function AdminPage() {
                           .filter((p) => (editingTeam.category === 'XD' ? p.pool === 3 : p.pool === 2))
                           .map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.name} (Điểm: {p.powerRating})
+                              {p.name}
                             </option>
                           ))}
                       </select>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-400 font-bold">Tổng điểm cặp dự kiến:</span>
-                      <span className="text-sm font-black font-mono text-emerald-400">
-                        {calculatedTotalPower} pts
-                      </span>
                     </div>
                   </div>
 
@@ -1218,28 +1180,15 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Điểm đánh giá (0-100)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={newPlayerPower}
-                    onChange={(e) => setNewPlayerPower(parseInt(e.target.value) || 0)}
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Phòng ban / Đơn vị</label>
-                  <input
-                    type="text"
-                    value={newPlayerDept}
-                    onChange={(e) => setNewPlayerDept(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white"
-                  />
-                </div>
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Phòng ban / Đơn vị</label>
+                <input
+                  type="text"
+                  value={newPlayerDept}
+                  onChange={(e) => setNewPlayerDept(e.target.value)}
+                  placeholder="Ví dụ: SAI Digital"
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-4">

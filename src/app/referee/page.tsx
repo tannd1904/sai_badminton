@@ -460,12 +460,9 @@ export default function RefereePage() {
                   <div>{leftTeam?.player1.name}</div>
                   <div className="text-slate-300 font-bold">{leftTeam?.player2.name}</div>
                 </h3>
-                <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                <div className="mt-1.5 flex items-center justify-center">
                   <span className="rounded-full bg-sai-cyan/20 border border-sai-cyan/40 px-2.5 py-0.5 text-xs font-mono font-black text-sai-cyan">
                     {leftTeam?.teamCode}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-bold">
-                    ({leftTeam?.totalPower} điểm)
                   </span>
                 </div>
               </div>
@@ -513,12 +510,9 @@ export default function RefereePage() {
                   <div>{rightTeam?.player1.name}</div>
                   <div className="text-slate-300 font-bold">{rightTeam?.player2.name}</div>
                 </h3>
-                <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                <div className="mt-1.5 flex items-center justify-center">
                   <span className="rounded-full bg-sai-yellow/20 border border-sai-yellow/40 px-2.5 py-0.5 text-xs font-mono font-black text-sai-yellow">
                     {rightTeam?.teamCode}
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-bold">
-                    ({rightTeam?.totalPower} điểm)
                   </span>
                 </div>
               </div>

@@ -160,7 +160,6 @@ export default function TVScoreboardPage() {
               </h3>
               <div className="inline-flex items-center gap-2 rounded-xl bg-sai-cyan/20 border border-sai-cyan/40 px-3.5 py-1 text-sm font-mono font-black text-sai-cyan mt-1">
                 <span>{leftTeam.teamCode}</span>
-                <span className="text-xs text-slate-400 font-normal">({leftTeam.totalPower} điểm)</span>
               </div>
             </div>
           </div>
@@ -186,7 +185,6 @@ export default function TVScoreboardPage() {
               </h3>
               <div className="inline-flex items-center gap-2 rounded-xl bg-sai-yellow/20 border border-sai-yellow/40 px-3.5 py-1 text-sm font-mono font-black text-sai-yellow mt-1">
                 <span>{rightTeam.teamCode}</span>
-                <span className="text-xs text-slate-400 font-normal">({rightTeam.totalPower} điểm)</span>
               </div>
             </div>
           </div>

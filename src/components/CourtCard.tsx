@@ -130,12 +130,9 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
                     <Trophy className="h-4 w-4 text-sai-yellow shrink-0 ml-1" />
                   )}
                 </div>
-                <div className="mt-1.5 flex items-center justify-center gap-1">
+                <div className="mt-1.5 flex items-center justify-center">
                   <span className="rounded bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
                     {teamLeft?.teamCode}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-bold">
-                    {teamLeft?.totalPower}p
                   </span>
                 </div>
               </div>
@@ -183,12 +180,9 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
                     <Trophy className="h-4 w-4 text-sai-yellow shrink-0 ml-1" />
                   )}
                 </div>
-                <div className="mt-1.5 flex items-center justify-center gap-1">
+                <div className="mt-1.5 flex items-center justify-center">
                   <span className="rounded bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-yellow">
                     {teamRight?.teamCode}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-bold">
-                    {teamRight?.totalPower}p
                   </span>
                 </div>
               </div>

@@ -250,7 +250,6 @@ export default function StandingsPage() {
                 <th className="py-3 px-4">
                   {activeTab === 'XD' ? t('standings.roster.female') : t('standings.roster.male2_md')}
                 </th>
-                <th className="py-3 px-3 text-center">{t('standings.roster.totalPower')}</th>
                 <th className="py-3 px-3 text-center">{locale === 'vi' ? 'Bảng đấu' : 'Group'}</th>
               </tr>
             </thead>
@@ -264,25 +263,14 @@ export default function StandingsPage() {
                     </span>
                   </td>
 
-                  {/* VĐV Nam (Pool 1) - Tên lớn kèm điểm số (Score) */}
+                  {/* VĐV Nam (Pool 1) - Tên VĐV */}
                   <td className="py-3.5 px-4">
-                    <span className="font-extrabold text-sm text-white">{pair.player1.name}</span>{' '}
-                    <span className="inline-block rounded bg-sai-cyan/15 text-sai-cyan border border-cyan-500/30 px-1.5 py-0.5 text-xs font-mono font-bold">
-                      ({pair.player1.powerRating})
-                    </span>
+                    <span className="font-extrabold text-sm text-white">{pair.player1.name}</span>
                   </td>
 
-                  {/* VĐV 2 (Pool 3 hoặc Pool 2) - Tên lớn kèm điểm số (Score) */}
+                  {/* VĐV 2 (Pool 3 hoặc Pool 2) - Tên VĐV */}
                   <td className="py-3.5 px-4">
-                    <span className="font-extrabold text-sm text-white">{pair.player2.name}</span>{' '}
-                    <span className="inline-block rounded bg-sai-yellow/15 text-sai-yellow border border-yellow-500/30 px-1.5 py-0.5 text-xs font-mono font-bold">
-                      ({pair.player2.powerRating})
-                    </span>
-                  </td>
-
-                  {/* Tổng điểm */}
-                  <td className="py-3.5 px-3 text-center font-mono font-black text-base text-emerald-400">
-                    {pair.totalPower}
+                    <span className="font-extrabold text-sm text-white">{pair.player2.name}</span>
                   </td>
 
                   {/* Bảng đấu */}
