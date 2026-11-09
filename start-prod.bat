@@ -16,3 +16,4 @@ echo (Instant page loading and zero compilation latency)
 echo.
 node launcher.js start
 pause
+

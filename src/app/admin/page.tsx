@@ -52,6 +52,14 @@ export default function AdminPage() {
   const [athleteFilterPool, setAthleteFilterPool] = useState<number | 'ALL'>('ALL');
   const [athleteSearchQuery, setAthleteSearchQuery] = useState<string>('');
 
+  // Edit Athlete states
+  const [editingPlayer, setEditingPlayer] = useState<PlayerData | null>(null);
+  const [editPlayerName, setEditPlayerName] = useState<string>('');
+  const [editPlayerGender, setEditPlayerGender] = useState<'MALE' | 'FEMALE'>('MALE');
+  const [editPlayerPool, setEditPlayerPool] = useState<number>(1);
+  const [editPlayerDept, setEditPlayerDept] = useState<string>('SAI Digital');
+  const [showEditPlayerModal, setShowEditPlayerModal] = useState<boolean>(false);
+
   // Pairs tab category filter
   const [pairsCategoryFilter, setPairsCategoryFilter] = useState<'ALL' | 'XD' | 'MD'>('ALL');
 
@@ -340,6 +348,36 @@ export default function AdminPage() {
         fetchScheduleAndConflicts();
       } else {
         showNotification(data.error || 'Thêm VĐV thất bại', 'error');
+      }
+    } catch (err: any) {
+      showNotification(err.message, 'error');
+    }
+  };
+
+  // Update existing player
+  const handleUpdatePlayer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPlayer) return;
+    try {
+      const res = await fetch('/api/players', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingPlayer.id,
+          name: editPlayerName,
+          gender: editPlayerGender,
+          pool: editPlayerPool,
+          department: editPlayerDept,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification(`✅ Đã cập nhật VĐV: ${editPlayerName} thành công!`);
+        setShowEditPlayerModal(false);
+        setEditingPlayer(null);
+        fetchScheduleAndConflicts();
+      } else {
+        showNotification(data.error || 'Cập nhật VĐV thất bại', 'error');
       }
     } catch (err: any) {
       showNotification(err.message, 'error');
@@ -729,6 +767,7 @@ export default function AdminPage() {
                     <th className="py-2.5 px-3">Nội dung đủ điều kiện</th>
                     <th className="py-2.5 px-3">Đơn vị / Phòng ban</th>
                     <th className="py-2.5 px-3 text-center">Trạng thái</th>
+                    <th className="py-2.5 px-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -774,6 +813,22 @@ export default function AdminPage() {
                           <Check className="h-3 w-3" />
                           <span>Sẵn sàng</span>
                         </span>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          onClick={() => {
+                            setEditingPlayer(pl);
+                            setEditPlayerName(pl.name);
+                            setEditPlayerGender(pl.gender as 'MALE' | 'FEMALE');
+                            setEditPlayerPool(pl.pool);
+                            setEditPlayerDept(pl.department || 'SAI Digital');
+                            setShowEditPlayerModal(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-800 border border-slate-700 px-3 py-1.5 text-xs text-sai-cyan hover:text-white hover:bg-slate-700 font-bold transition shadow-sm"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          <span>Chỉnh sửa</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1204,6 +1259,88 @@ export default function AdminPage() {
                   className="px-4 py-2 rounded-xl bg-sai-cyan text-xs font-black text-slate-950 shadow-md shadow-cyan-500/20 hover:brightness-110"
                 >
                   Lưu Vận động viên
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Player */}
+      {showEditPlayerModal && editingPlayer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="text-base font-black text-white mb-4 flex items-center gap-2">
+              <Edit className="h-5 w-5 text-sai-cyan" />
+              <span>Chỉnh sửa Thông tin Vận động viên</span>
+            </h3>
+            <form onSubmit={handleUpdatePlayer} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Họ và Tên VĐV</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Họ và tên..."
+                  value={editPlayerName}
+                  onChange={(e) => setEditPlayerName(e.target.value)}
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white text-sm font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Giới tính</label>
+                  <select
+                    value={editPlayerGender}
+                    onChange={(e) => setEditPlayerGender(e.target.value as 'MALE' | 'FEMALE')}
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white"
+                  >
+                    <option value="MALE">Nam (Male)</option>
+                    <option value="FEMALE">Nữ (Female)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Nhóm (Pool)</label>
+                  <select
+                    value={editPlayerPool}
+                    onChange={(e) => setEditPlayerPool(parseInt(e.target.value))}
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white"
+                  >
+                    <option value={1}>Pool 1 (Nam hạt giống - Đấu cả MD & XD)</option>
+                    <option value={2}>Pool 2 (Nam trung cấp - Chỉ đấu MD)</option>
+                    <option value={3}>Pool 3 (Nữ - Chỉ đấu XD)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Phòng ban / Đơn vị</label>
+                <input
+                  type="text"
+                  value={editPlayerDept}
+                  onChange={(e) => setEditPlayerDept(e.target.value)}
+                  placeholder="Ví dụ: SAI Digital"
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditPlayerModal(false);
+                    setEditingPlayer(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-300 hover:text-white"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-sai-cyan text-xs font-black text-slate-950 shadow-md shadow-cyan-500/20 hover:brightness-110"
+                >
+                  Lưu thay đổi
                 </button>
               </div>
             </form>
