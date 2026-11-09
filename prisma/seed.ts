@@ -81,37 +81,37 @@ async function main() {
   // Pool 1: 8 Men (Score 70-100) -> Plays MD and XD
   const pool1Raw = [
     { name: 'Tuyển Nguyễn', powerRating: 80 },
-    { name: 'Duy Tân', powerRating: 80 },
-    { name: 'Trọng Nghĩa', powerRating: 100 },
-    { name: 'Tuấn Kiên', powerRating: 90 },
-    { name: 'Hoàng Linh', powerRating: 90 },
+    { name: 'Nguyễn Duy Tân', powerRating: 80 },
+    { name: 'NGUYEN TRONG NGHIA', powerRating: 100 },
+    { name: 'Nguyễn Tuấn Kiên', powerRating: 90 },
+    { name: 'Nguyễn Hoàng Linh', powerRating: 90 },
     { name: 'Phạm Quốc Toản', powerRating: 70 },
-    { name: 'Xuân Việt', powerRating: 70 },
-    { name: 'Cường', powerRating: 70 },
+    { name: 'Ty Xuân Việt', powerRating: 70 },
+    { name: 'Cường (vãng lai)', powerRating: 70 },
   ];
 
   // Pool 2: 8 Men (Score 50-60) -> Plays MD only
   const pool2Raw = [
     { name: 'Lê Văn Linh', powerRating: 55 },
-    { name: 'Thành Đạt', powerRating: 60 },
-    { name: 'Minh', powerRating: 50 },
+    { name: 'Bùi Thành Đạt', powerRating: 60 },
+    { name: 'Minh (vãng lai)', powerRating: 50 },
     { name: 'Phát', powerRating: 55 },
-    { name: 'Tấn Đại', powerRating: 55 },
-    { name: 'Tuấn Anh', powerRating: 55 },
-    { name: 'Thành Tâm', powerRating: 50 },
-    { name: 'Văn Huy', powerRating: 60 },
+    { name: 'Lương Tấn Đại', powerRating: 55 },
+    { name: 'Nguyễn Tuấn Anh', powerRating: 55 },
+    { name: 'Nguyễn Thành Tâm', powerRating: 50 },
+    { name: 'Nguyễn Văn Huy', powerRating: 60 },
   ];
 
   // Pool 3: 8 Women (Score 40-45) -> Plays XD only
   const pool3Raw = [
     { name: 'Meetu', powerRating: 40 },
-    { name: 'Thảo Trúc', powerRating: 45 },
-    { name: 'Hà', powerRating: 40 },
-    { name: 'Diễm Thúy', powerRating: 40 },
-    { name: 'Thu Hiền', powerRating: 40 },
-    { name: 'Thùy Linh', powerRating: 45 },
-    { name: 'Kim Anh', powerRating: 45 },
-    { name: 'Ngọc', powerRating: 45 },
+    { name: 'Nguyễn Trần Thảo Trúc', powerRating: 45 },
+    { name: 'Hà (vãng lai)', powerRating: 40 },
+    { name: 'Le Huynh Diem Thuy', powerRating: 40 },
+    { name: 'Đinh Thị Thu Hiền', powerRating: 40 },
+    { name: 'Trần Thị Thuỳ Linh', powerRating: 45 },
+    { name: 'Trần Văn Kim Anh', powerRating: 45 },
+    { name: 'Ngọc (vãng lai)', powerRating: 45 },
   ];
 
   const pool1Players: Record<string, any> = {};
@@ -165,13 +165,13 @@ async function main() {
   // XD Group B: XD3, XD5, XD1, XD7
   const xdConfigs = [
     { code: 'XD1', p1: 'Tuyển Nguyễn', p2: 'Meetu', group: GroupName.B },
-    { code: 'XD2', p1: 'Duy Tân', p2: 'Thảo Trúc', group: GroupName.A },
-    { code: 'XD3', p1: 'Trọng Nghĩa', p2: 'Hà', group: GroupName.B },
-    { code: 'XD4', p1: 'Tuấn Kiên', p2: 'Diễm Thúy', group: GroupName.A },
-    { code: 'XD5', p1: 'Hoàng Linh', p2: 'Thu Hiền', group: GroupName.B },
-    { code: 'XD6', p1: 'Phạm Quốc Toản', p2: 'Thùy Linh', group: GroupName.A },
-    { code: 'XD7', p1: 'Xuân Việt', p2: 'Kim Anh', group: GroupName.B },
-    { code: 'XD8', p1: 'Cường', p2: 'Ngọc', group: GroupName.A },
+    { code: 'XD2', p1: 'Nguyễn Duy Tân', p2: 'Nguyễn Trần Thảo Trúc', group: GroupName.A },
+    { code: 'XD3', p1: 'NGUYEN TRONG NGHIA', p2: 'Hà (vãng lai)', group: GroupName.B },
+    { code: 'XD4', p1: 'Nguyễn Tuấn Kiên', p2: 'Le Huynh Diem Thuy', group: GroupName.A },
+    { code: 'XD5', p1: 'Nguyễn Hoàng Linh', p2: 'Đinh Thị Thu Hiền', group: GroupName.B },
+    { code: 'XD6', p1: 'Phạm Quốc Toản', p2: 'Trần Thị Thuỳ Linh', group: GroupName.A },
+    { code: 'XD7', p1: 'Ty Xuân Việt', p2: 'Trần Văn Kim Anh', group: GroupName.B },
+    { code: 'XD8', p1: 'Cường (vãng lai)', p2: 'Ngọc (vãng lai)', group: GroupName.A },
   ];
 
   const xdTeams: Record<string, any> = {};
@@ -197,13 +197,13 @@ async function main() {
   // MD Group B: MD3, MD4, MD6, MD7
   const mdConfigs = [
     { code: 'MD1', p1: 'Phạm Quốc Toản', p2: 'Lê Văn Linh', group: GroupName.A },
-    { code: 'MD2', p1: 'Duy Tân', p2: 'Thành Đạt', group: GroupName.A },
-    { code: 'MD3', p1: 'Trọng Nghĩa', p2: 'Minh', group: GroupName.B },
-    { code: 'MD4', p1: 'Tuấn Kiên', p2: 'Phát', group: GroupName.B },
-    { code: 'MD5', p1: 'Hoàng Linh', p2: 'Tấn Đại', group: GroupName.A },
-    { code: 'MD6', p1: 'Tuyển Nguyễn', p2: 'Tuấn Anh', group: GroupName.B },
-    { code: 'MD7', p1: 'Xuân Việt', p2: 'Thành Tâm', group: GroupName.B },
-    { code: 'MD8', p1: 'Cường', p2: 'Văn Huy', group: GroupName.A },
+    { code: 'MD2', p1: 'Nguyễn Duy Tân', p2: 'Bùi Thành Đạt', group: GroupName.A },
+    { code: 'MD3', p1: 'NGUYEN TRONG NGHIA', p2: 'Minh (vãng lai)', group: GroupName.B },
+    { code: 'MD4', p1: 'Nguyễn Tuấn Kiên', p2: 'Phát', group: GroupName.B },
+    { code: 'MD5', p1: 'Nguyễn Hoàng Linh', p2: 'Lương Tấn Đại', group: GroupName.A },
+    { code: 'MD6', p1: 'Tuyển Nguyễn', p2: 'Nguyễn Tuấn Anh', group: GroupName.B },
+    { code: 'MD7', p1: 'Ty Xuân Việt', p2: 'Nguyễn Thành Tâm', group: GroupName.B },
+    { code: 'MD8', p1: 'Cường (vãng lai)', p2: 'Nguyễn Văn Huy', group: GroupName.A },
   ];
 
   const mdTeams: Record<string, any> = {};

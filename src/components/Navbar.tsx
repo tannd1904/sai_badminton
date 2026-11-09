@@ -32,14 +32,23 @@ export function Navbar() {
     setSoundOn(newState);
   };
 
+  const role = (session?.user as any)?.role;
+
+  // Filter navigation items strictly based on role requirements:
+  // - REFEREE cannot see Organizer Center
+  // - ORGANIZER cannot see Referee Touchpad
+  // - SUPER_ADMIN sees both
   const navItems = [
     { label: 'Live Courts', href: '/', icon: Tv },
+    { label: 'TV Scoreboard', href: '/tv', icon: Tv },
     { label: 'Standings & Brackets', href: '/standings', icon: Trophy },
-    { label: 'Referee Touchpad', href: '/referee', icon: Activity },
-    { label: 'Organizer Center', href: '/admin', icon: Calendar },
+    ...(role === 'ORGANIZER'
+      ? []
+      : [{ label: 'Referee Touchpad', href: '/referee', icon: Activity }]),
+    ...(role === 'REFEREE'
+      ? []
+      : [{ label: 'Organizer Center', href: '/admin', icon: Calendar }]),
   ];
-
-  const role = (session?.user as any)?.role;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-sai-navy-950/90 backdrop-blur-md">

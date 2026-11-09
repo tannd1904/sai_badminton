@@ -125,14 +125,12 @@ export default function TVScoreboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {match.rulesMode === 'SINGLE_SET_10MIN' && (
-              <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-2 rounded-2xl">
-                <Clock className="h-5 w-5 text-sai-yellow" />
-                <span className="font-mono text-2xl font-black text-white">
-                  {formatTimer(match.timerRemainingSeconds)}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-2 rounded-2xl">
+              <Clock className="h-5 w-5 text-sai-yellow" />
+              <span className="font-mono text-2xl font-black text-white">
+                {formatTimer(match.timerRemainingSeconds)}
+              </span>
+            </div>
             <span
               className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
                 match.status === 'IN_PROGRESS'
@@ -147,15 +145,16 @@ export default function TVScoreboardPage() {
 
         {/* Score Board Display */}
         <div className="grid grid-cols-7 items-center gap-4 my-8">
-          {/* Left Team */}
+          {/* Left Team - Athlete Names Prominent */}
           <div className="col-span-3 text-center">
             <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl">
-              <h3 className="text-3xl sm:text-5xl font-black text-white mb-2">{leftTeam.teamCode}</h3>
-              <p className="text-sm sm:text-base font-semibold text-slate-300 truncate">
-                {leftTeam.player1.name} & {leftTeam.player2.name}
-              </p>
-              <div className="mt-3 text-xs text-slate-500 font-bold uppercase">
-                Power: {leftTeam.totalPower}
+              <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 leading-tight">
+                <div>{leftTeam.player1.name}</div>
+                <div className="text-slate-200">{leftTeam.player2.name}</div>
+              </h3>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-sai-cyan/20 border border-sai-cyan/40 px-3.5 py-1 text-sm font-mono font-black text-sai-cyan mt-1">
+                <span>{leftTeam.teamCode}</span>
+                <span className="text-xs text-slate-400 font-normal">({leftTeam.totalPower} điểm)</span>
               </div>
             </div>
           </div>
@@ -172,15 +171,16 @@ export default function TVScoreboardPage() {
             </span>
           </div>
 
-          {/* Right Team */}
+          {/* Right Team - Athlete Names Prominent */}
           <div className="col-span-3 text-center">
             <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl">
-              <h3 className="text-3xl sm:text-5xl font-black text-white mb-2">{rightTeam.teamCode}</h3>
-              <p className="text-sm sm:text-base font-semibold text-slate-300 truncate">
-                {rightTeam.player1.name} & {rightTeam.player2.name}
-              </p>
-              <div className="mt-3 text-xs text-slate-500 font-bold uppercase">
-                Power: {rightTeam.totalPower}
+              <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 leading-tight">
+                <div>{rightTeam.player1.name}</div>
+                <div className="text-slate-200">{rightTeam.player2.name}</div>
+              </h3>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-sai-yellow/20 border border-sai-yellow/40 px-3.5 py-1 text-sm font-mono font-black text-sai-yellow mt-1">
+                <span>{rightTeam.teamCode}</span>
+                <span className="text-xs text-slate-400 font-normal">({rightTeam.totalPower} điểm)</span>
               </div>
             </div>
           </div>

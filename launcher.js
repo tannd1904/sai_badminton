@@ -23,16 +23,31 @@ if (major < 18) {
   }
 }
 
-// Find tsx binary
-const tsxCli = path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+// Determine command
+const args = process.argv.slice(2);
+const cmd = args[0] || 'dev';
 
-const child = spawn(execPath, [tsxCli, 'server.ts'], {
-  stdio: 'inherit',
-  env: {
-    ...process.env,
-    PATH: envPath,
-  },
-});
+let child;
+if (cmd === 'build') {
+  const nextCli = path.join(__dirname, 'node_modules', 'next', 'dist', 'bin', 'next');
+  child = spawn(execPath, [nextCli, 'build'], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PATH: envPath,
+    },
+  });
+} else {
+  // Find tsx binary
+  const tsxCli = path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  child = spawn(execPath, [tsxCli, 'server.ts'], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PATH: envPath,
+    },
+  });
+}
 
 child.on('exit', (code) => {
   process.exit(code || 0);

@@ -96,6 +96,10 @@ export default function HomePage() {
   const completedCount = matches.filter((m) => m.status === 'COMPLETED').length;
   const scheduledCount = matches.filter((m) => m.status === 'SCHEDULED').length;
 
+  // Dynamically resolve active courts from current schedule (supports 2 courts or 3 courts)
+  const courtNumbers = Array.from(new Set(matches.map((m) => m.courtNumber))).sort((a, b) => a - b);
+  const activeCourtsList = courtNumbers.length > 0 ? courtNumbers : [1, 2, 3];
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       {/* Hero Header */}
@@ -187,9 +191,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Real-time 3-Court View */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        {[1, 2, 3].map((courtNum) => {
+      {/* Real-time Courts View (Supports 2 or 3 active courts) */}
+      <div className={`grid grid-cols-1 ${activeCourtsList.length === 2 ? 'md:grid-cols-2' : 'lg:grid-cols-3'} gap-6 mb-10`}>
+        {activeCourtsList.map((courtNum) => {
           const { active, next } = getCourtMatches(courtNum);
           return (
             <CourtCard
@@ -207,24 +211,24 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-extrabold text-white flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-sai-cyan" />
-            <span>All Matches Fixture & Live Progress</span>
+            <span>Danh sách toàn bộ các trận đấu & Tiến trình thi đấu</span>
           </h2>
-          <span className="text-xs text-slate-500 font-mono">{filteredMatches.length} matches registered</span>
+          <span className="text-xs text-slate-500 font-mono">{filteredMatches.length} trận đấu</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold">
-                <th className="py-2.5 px-3">Code</th>
-                <th className="py-2.5 px-3">Court</th>
-                <th className="py-2.5 px-3">Category</th>
-                <th className="py-2.5 px-3">Stage</th>
-                <th className="py-2.5 px-3">Team A</th>
-                <th className="py-2.5 px-3 text-center">Score</th>
-                <th className="py-2.5 px-3">Team B</th>
-                <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-3">Winner</th>
+                <th className="py-2.5 px-3">Mã Trận</th>
+                <th className="py-2.5 px-3">Sân</th>
+                <th className="py-2.5 px-3">Nội Dung</th>
+                <th className="py-2.5 px-3">Vòng</th>
+                <th className="py-2.5 px-3">Đội A (VĐV)</th>
+                <th className="py-2.5 px-3 text-center">Tỉ Số</th>
+                <th className="py-2.5 px-3">Đội B (VĐV)</th>
+                <th className="py-2.5 px-3">Trạng Thái</th>
+                <th className="py-2.5 px-3">Đội Thắng</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -235,24 +239,28 @@ export default function HomePage() {
                     <td className="py-2.5 px-3 font-mono font-bold text-white">{m.matchCode}</td>
                     <td className="py-2.5 px-3">
                       <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-bold text-sai-cyan">
-                        Court {m.courtNumber}
+                        Sân {m.courtNumber}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 font-bold text-slate-300">{m.category}</td>
                     <td className="py-2.5 px-3 text-slate-400">{m.roundType}</td>
                     <td className="py-2.5 px-3 font-bold text-white">
-                      {m.teamA.teamCode}
-                      <span className="block text-[10px] text-slate-400 font-normal truncate max-w-[120px]">
-                        {m.teamA.player1.name} / {m.teamA.player2.name}
+                      <div className="font-extrabold text-white text-xs">
+                        {m.teamA.player1.name} & {m.teamA.player2.name}
+                      </div>
+                      <span className="inline-block rounded bg-sai-cyan/20 border border-sai-cyan/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan mt-0.5">
+                        {m.teamA.teamCode}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center font-mono font-bold text-sm text-sai-yellow">
                       {s1 ? `${s1.teamAScore} - ${s1.teamBScore}` : '0 - 0'}
                     </td>
                     <td className="py-2.5 px-3 font-bold text-white">
-                      {m.teamB.teamCode}
-                      <span className="block text-[10px] text-slate-400 font-normal truncate max-w-[120px]">
-                        {m.teamB.player1.name} / {m.teamB.player2.name}
+                      <div className="font-extrabold text-white text-xs">
+                        {m.teamB.player1.name} & {m.teamB.player2.name}
+                      </div>
+                      <span className="inline-block rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-yellow mt-0.5">
+                        {m.teamB.teamCode}
                       </span>
                     </td>
                     <td className="py-2.5 px-3">
@@ -269,7 +277,14 @@ export default function HomePage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-emerald-400 font-bold">
-                      {m.winnerTeam?.teamCode || '-'}
+                      {m.winnerTeam ? (
+                        <div>
+                          <span>{m.winnerTeam.player1.name} & {m.winnerTeam.player2.name}</span>
+                          <span className="ml-1 text-[10px] font-mono text-slate-400">({m.winnerTeam.teamCode})</span>
+                        </div>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                   </tr>
                 );

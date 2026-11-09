@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '@/lib/socket-client';
-import { Trophy, Medal, Award, Flame, ChevronRight, RefreshCw, GitBranch } from 'lucide-react';
-import { GroupStandingItem, MatchData } from '@/types';
+import { Trophy, Medal, Award, Flame, ChevronRight, RefreshCw, GitBranch, Users } from 'lucide-react';
+import { GroupStandingItem, MatchData, TeamData } from '@/types';
 
 export default function StandingsPage() {
   const { subscribeToScore, subscribeToMatchStatus } = useSocket();
@@ -19,15 +19,17 @@ export default function StandingsPage() {
     mdGroupA: [],
     mdGroupB: [],
   });
+  const [allTeams, setAllTeams] = useState<TeamData[]>([]);
   const [playoffMatches, setPlayoffMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStandings = useCallback(async () => {
     try {
       setLoading(true);
-      const [standingsRes, matchesRes] = await Promise.all([
+      const [standingsRes, matchesRes, teamsRes] = await Promise.all([
         fetch('/api/standings'),
         fetch('/api/matches?roundType=SEMI,BRONZE,FINAL'),
+        fetch('/api/teams'),
       ]);
 
       if (standingsRes.ok) {
@@ -38,6 +40,11 @@ export default function StandingsPage() {
       if (matchesRes.ok) {
         const mData = await matchesRes.json();
         setPlayoffMatches(mData);
+      }
+
+      if (teamsRes.ok) {
+        const tData = await teamsRes.json();
+        setAllTeams(tData.teams || []);
       }
     } catch (e) {
       console.error('Failed to load standings:', e);
@@ -68,6 +75,11 @@ export default function StandingsPage() {
   const currentGroupA = activeTab === 'XD' ? standings.xdGroupA : standings.mdGroupA;
   const currentGroupB = activeTab === 'XD' ? standings.xdGroupB : standings.mdGroupB;
 
+  // Filter 8 pairs for the selected category, sorted by team code
+  const currentCategoryPairs = allTeams
+    .filter((t) => t.category === activeTab)
+    .sort((a, b) => a.teamCode.localeCompare(b.teamCode));
+
   // Filter playoff matches for the active category
   const activePlayoffs = playoffMatches.filter((m) => m.category === activeTab);
   const semi1 = activePlayoffs.find((m) => m.matchCode.includes('SF1'));
@@ -84,7 +96,7 @@ export default function StandingsPage() {
           </span>
           <span>{title}</span>
         </h3>
-        <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
+        <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-md">
           Top 2 Advance to Semis
         </span>
       </div>
@@ -93,14 +105,14 @@ export default function StandingsPage() {
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
-              <th className="py-2.5 px-2 text-center">Pos</th>
-              <th className="py-2.5 px-3">Team & Roster</th>
-              <th className="py-2.5 px-2 text-center">P</th>
-              <th className="py-2.5 px-2 text-center">W</th>
-              <th className="py-2.5 px-2 text-center">L</th>
-              <th className="py-2.5 px-2 text-center">Set Diff</th>
-              <th className="py-2.5 px-2 text-center">Pt Diff</th>
-              <th className="py-2.5 px-3 text-center font-black text-sai-cyan">PTS</th>
+              <th className="py-2.5 px-2 text-center">Hạng</th>
+              <th className="py-2.5 px-3">Vận Động Viên (Roster)</th>
+              <th className="py-2.5 px-2 text-center">Trận</th>
+              <th className="py-2.5 px-2 text-center">Thắng</th>
+              <th className="py-2.5 px-2 text-center">Thua</th>
+              <th className="py-2.5 px-2 text-center">Hiệu Số Set</th>
+              <th className="py-2.5 px-2 text-center">Hiệu Số Điểm</th>
+              <th className="py-2.5 px-3 text-center font-black text-sai-cyan">ĐIỂM</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -115,9 +127,9 @@ export default function StandingsPage() {
                       : 'hover:bg-slate-800/40'
                   }`}
                 >
-                  <td className="py-2.5 px-2 text-center font-bold">
+                  <td className="py-3 px-2 text-center font-bold">
                     <span
-                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
                         idx === 0
                           ? 'bg-sai-yellow text-slate-950 shadow-sm shadow-yellow-500/30'
                           : idx === 1
@@ -128,22 +140,28 @@ export default function StandingsPage() {
                       {item.rank || idx + 1}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3">
-                    <div className="font-extrabold text-white text-xs">{item.teamCode}</div>
-                    <div className="text-[10px] text-slate-400 truncate">
-                      {item.player1Name} · {item.player2Name}
+                  <td className="py-3 px-3">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      {/* Prominent Player Names */}
+                      <span className="font-black text-white text-sm">
+                        {item.player1Name} & {item.player2Name}
+                      </span>
+                      {/* Secondary Team Code Badge */}
+                      <span className="rounded bg-slate-800 border border-slate-700/80 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
+                        {item.teamCode}
+                      </span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 text-center text-slate-300">{item.played}</td>
-                  <td className="py-2.5 px-2 text-center text-emerald-400 font-bold">{item.won}</td>
-                  <td className="py-2.5 px-2 text-center text-rose-400">{item.lost}</td>
-                  <td className="py-2.5 px-2 text-center font-mono">
+                  <td className="py-3 px-2 text-center text-slate-300">{item.played}</td>
+                  <td className="py-3 px-2 text-center text-emerald-400 font-bold">{item.won}</td>
+                  <td className="py-3 px-2 text-center text-rose-400">{item.lost}</td>
+                  <td className="py-3 px-2 text-center font-mono font-semibold">
                     {item.setDiff > 0 ? `+${item.setDiff}` : item.setDiff}
                   </td>
-                  <td className="py-2.5 px-2 text-center font-mono text-slate-400">
+                  <td className="py-3 px-2 text-center font-mono text-slate-400">
                     {item.pointDiff > 0 ? `+${item.pointDiff}` : item.pointDiff}
                   </td>
-                  <td className="py-2.5 px-3 text-center font-mono font-black text-sm text-sai-cyan">
+                  <td className="py-3 px-3 text-center font-mono font-black text-base text-sai-cyan">
                     {item.points}
                   </td>
                 </tr>
@@ -162,10 +180,10 @@ export default function StandingsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
             <Trophy className="h-7 w-7 text-sai-yellow" />
-            <span>Tournament Standings & Playoffs</span>
+            <span>Bảng Đấu & Danh Sách Cặp Đấu</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time automated group standings with official tie-breaking rules and interactive knockout tree
+            Bảng ghép cặp toàn bộ 8 đội, bảng xếp hạng vòng bảng tự động theo luật BWF và sơ đồ vòng loại trực tiếp Playoff
           </p>
         </div>
 
@@ -179,7 +197,7 @@ export default function StandingsPage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🏸 Mixed Doubles (XD)
+              🏸 Đôi Nam Nữ (XD)
             </button>
             <button
               onClick={() => setActiveTab('MD')}
@@ -189,7 +207,7 @@ export default function StandingsPage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🏸 Men&apos;s Doubles (MD)
+              🏸 Đôi Nam (MD)
             </button>
           </div>
 
@@ -203,37 +221,124 @@ export default function StandingsPage() {
         </div>
       </div>
 
-      {/* Group Stage Tables (Group A and Group B) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-        {renderStandingsTable(`${activeTab} - Group A`, currentGroupA)}
-        {renderStandingsTable(`${activeTab} - Group B`, currentGroupB)}
+      {/* SECTION 1: BẢNG GHÉP CẶP TOÀN BỘ 8 ĐỘI (Exact layout as user reference images) */}
+      <div className="mb-10 rounded-3xl border border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-2xl backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-sai-cyan">
+              {activeTab === 'XD' ? 'II. Nội dung Đôi Nam Nữ (Mixed Doubles)' : 'I. Nội dung Đôi Nam (Men\'s Doubles)'}
+            </span>
+            <h2 className="text-lg font-black text-white mt-0.5">
+              1. Bảng ghép cặp toàn bộ 8 đội
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400 bg-slate-800/80 px-3 py-1 rounded-xl font-medium">
+            Tổng cộng: 8 cặp đấu (2 bảng A & B)
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[11px]">
+                <th className="py-3 px-3">Mã cặp</th>
+                <th className="py-3 px-4">
+                  {activeTab === 'XD' ? 'VĐV Nam (Pool 1)' : 'VĐV Nam 1 (Pool 1)'}
+                </th>
+                <th className="py-3 px-4">
+                  {activeTab === 'XD' ? 'VĐV Nữ (Pool 3)' : 'VĐV Nam 2 (Pool 2)'}
+                </th>
+                <th className="py-3 px-3 text-center">Tổng điểm</th>
+                <th className="py-3 px-3 text-center">Bảng đấu</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {currentCategoryPairs.map((pair) => (
+                <tr key={pair.id} className="hover:bg-slate-800/40 transition">
+                  {/* Mã cặp */}
+                  <td className="py-3.5 px-3">
+                    <span className="rounded-lg bg-sai-navy-800 border border-slate-700/80 px-2 py-1 font-mono font-black text-xs text-sai-cyan">
+                      {pair.teamCode}
+                    </span>
+                  </td>
+
+                  {/* VĐV Nam (Pool 1) - Tên lớn, điểm kèm theo */}
+                  <td className="py-3.5 px-4">
+                    <div className="font-black text-sm text-white">{pair.player1.name}</div>
+                    <div className="text-[11px] font-bold text-sai-cyan font-mono mt-0.5">
+                      Điểm: {pair.player1.powerRating}
+                    </div>
+                  </td>
+
+                  {/* VĐV 2 (Pool 3 hoặc Pool 2) - Tên lớn, điểm kèm theo */}
+                  <td className="py-3.5 px-4">
+                    <div className="font-black text-sm text-white">{pair.player2.name}</div>
+                    <div className="text-[11px] font-bold text-sai-yellow font-mono mt-0.5">
+                      Điểm: {pair.player2.powerRating}
+                    </div>
+                  </td>
+
+                  {/* Tổng điểm */}
+                  <td className="py-3.5 px-3 text-center font-mono font-black text-base text-emerald-400">
+                    {pair.totalPower}
+                  </td>
+
+                  {/* Bảng đấu */}
+                  <td className="py-3.5 px-3 text-center">
+                    <span
+                      className={`inline-block rounded-lg px-2.5 py-1 font-bold text-xs uppercase ${
+                        pair.groupName === 'A'
+                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      }`}
+                    >
+                      Bảng {pair.groupName}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Interactive Knockout Bracket Section */}
+      {/* SECTION 2: BẢNG XẾP HẠNG VÒNG BẢNG (BẢNG A & BẢNG B) */}
+      <div className="mb-4">
+        <h2 className="text-lg font-black text-white mb-3">
+          2. Bảng xếp hạng Vòng Bảng (Bảng A & Bảng B)
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+        {renderStandingsTable(`${activeTab} - Bảng A`, currentGroupA)}
+        {renderStandingsTable(`${activeTab} - Bảng B`, currentGroupB)}
+      </div>
+
+      {/* SECTION 3: SƠ ĐỒ VÒNG LOẠI TRỰC TIẾP (KNOCKOUT TREE) */}
       <div className="rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 to-sai-navy-950/90 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
         <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <GitBranch className="h-5 w-5 text-sai-cyan" />
               <h2 className="text-xl font-black text-white">
-                {activeTab} Knockout Stage (Best of 3 Sets)
+                3. Vòng Playoff Loại Trực Tiếp {activeTab} (Best of 3 Sets)
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Top 2 teams from Group A & B cross-pair into Semifinals, Bronze Medal, and Championship Final
+              Đội Nhất và Nhì của 2 bảng đấu chéo vào Bán kết (A1 vs B2, B1 vs A2), Tranh Hạng Ba và Chung Kết
             </p>
           </div>
           <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
-            BO3 Standard Rules
+            BO3 Luật 21 điểm chuẩn
           </span>
         </div>
 
-        {/* Visual Bracket Tree */}
+        {/* Visual Bracket Tree with prominent player names */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           {/* Column 1: Semifinals */}
           <div className="space-y-6">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 text-center">
-              Semifinals (BO3)
+              Vòng Bán Kết (Semi-Finals)
             </h3>
 
             {/* Semi 1: A1 vs B2 */}
@@ -243,26 +348,32 @@ export default function StandingsPage() {
                 <span>Court {semi1?.courtNumber || 1}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
-                  <span className="font-bold text-xs text-white">
-                    {semi1?.teamA.teamCode || `${activeTab} A1`}
-                  </span>
-                  <span className="font-mono font-black text-sai-cyan">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <div className="font-black text-xs text-white">
+                      {semi1?.teamA ? `${semi1.teamA.player1.name} & ${semi1.teamA.player2.name}` : `${activeTab} Nhất Bảng A`}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{semi1?.teamA.teamCode}</span>
+                  </div>
+                  <span className="font-mono font-black text-base text-sai-cyan">
                     {semi1?.sets[0]?.teamAScore ?? 0}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
-                  <span className="font-bold text-xs text-white">
-                    {semi1?.teamB.teamCode || `${activeTab} B2`}
-                  </span>
-                  <span className="font-mono font-black text-sai-yellow">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <div className="font-black text-xs text-white">
+                      {semi1?.teamB ? `${semi1.teamB.player1.name} & ${semi1.teamB.player2.name}` : `${activeTab} Nhì Bảng B`}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{semi1?.teamB.teamCode}</span>
+                  </div>
+                  <span className="font-mono font-black text-base text-sai-yellow">
                     {semi1?.sets[0]?.teamBScore ?? 0}
                   </span>
                 </div>
               </div>
               <div className="mt-2 text-right">
                 <span className="text-[10px] font-bold text-emerald-400">
-                  {semi1?.winnerTeam ? `Winner: ${semi1.winnerTeam.teamCode}` : 'Scheduled'}
+                  {semi1?.winnerTeam ? `Thắng: ${semi1.winnerTeam.player1.name} & ${semi1.winnerTeam.player2.name}` : 'Đã lên lịch'}
                 </span>
               </div>
             </div>
@@ -274,26 +385,32 @@ export default function StandingsPage() {
                 <span>Court {semi2?.courtNumber || 2}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
-                  <span className="font-bold text-xs text-white">
-                    {semi2?.teamA.teamCode || `${activeTab} B1`}
-                  </span>
-                  <span className="font-mono font-black text-sai-cyan">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <div className="font-black text-xs text-white">
+                      {semi2?.teamA ? `${semi2.teamA.player1.name} & ${semi2.teamA.player2.name}` : `${activeTab} Nhất Bảng B`}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{semi2?.teamA.teamCode}</span>
+                  </div>
+                  <span className="font-mono font-black text-base text-sai-cyan">
                     {semi2?.sets[0]?.teamAScore ?? 0}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
-                  <span className="font-bold text-xs text-white">
-                    {semi2?.teamB.teamCode || `${activeTab} A2`}
-                  </span>
-                  <span className="font-mono font-black text-sai-yellow">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <div className="font-black text-xs text-white">
+                      {semi2?.teamB ? `${semi2.teamB.player1.name} & ${semi2.teamB.player2.name}` : `${activeTab} Nhì Bảng A`}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{semi2?.teamB.teamCode}</span>
+                  </div>
+                  <span className="font-mono font-black text-base text-sai-yellow">
                     {semi2?.sets[0]?.teamBScore ?? 0}
                   </span>
                 </div>
               </div>
               <div className="mt-2 text-right">
                 <span className="text-[10px] font-bold text-emerald-400">
-                  {semi2?.winnerTeam ? `Winner: ${semi2.winnerTeam.teamCode}` : 'Scheduled'}
+                  {semi2?.winnerTeam ? `Thắng: ${semi2.winnerTeam.player1.name} & ${semi2.winnerTeam.player2.name}` : 'Đã lên lịch'}
                 </span>
               </div>
             </div>
@@ -302,38 +419,44 @@ export default function StandingsPage() {
           {/* Column 2: Connectors & Bronze */}
           <div className="space-y-6">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 text-center">
-              Bronze Match (3rd Place)
+              Tranh Hạng Ba (Bronze Medal)
             </h3>
 
             <div className="rounded-2xl border border-amber-900/40 bg-amber-950/10 p-4 shadow-lg hover:border-amber-700/50 transition">
               <div className="flex items-center justify-between text-[10px] text-amber-400 mb-2 font-bold">
                 <span className="flex items-center gap-1">
                   <Medal className="h-3.5 w-3.5" />
-                  BRONZE MEDAL
+                  HUY CHƯƠNG ĐỒNG
                 </span>
                 <span>Court {bronze?.courtNumber || 3}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
-                  <span className="font-bold text-xs text-white">
-                    {bronze?.teamA.teamCode || 'Loser SF1'}
-                  </span>
-                  <span className="font-mono font-black text-sai-cyan">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <div className="font-black text-xs text-white">
+                      {bronze?.teamA ? `${bronze.teamA.player1.name} & ${bronze.teamA.player2.name}` : 'Thua BK 1'}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{bronze?.teamA.teamCode}</span>
+                  </div>
+                  <span className="font-mono font-black text-base text-sai-cyan">
                     {bronze?.sets[0]?.teamAScore ?? 0}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
-                  <span className="font-bold text-xs text-white">
-                    {bronze?.teamB.teamCode || 'Loser SF2'}
-                  </span>
-                  <span className="font-mono font-black text-sai-yellow">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <div className="font-black text-xs text-white">
+                      {bronze?.teamB ? `${bronze.teamB.player1.name} & ${bronze.teamB.player2.name}` : 'Thua BK 2'}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{bronze?.teamB.teamCode}</span>
+                  </div>
+                  <span className="font-mono font-black text-base text-sai-yellow">
                     {bronze?.sets[0]?.teamBScore ?? 0}
                   </span>
                 </div>
               </div>
               <div className="mt-2 text-right">
                 <span className="text-[10px] font-bold text-amber-300">
-                  {bronze?.winnerTeam ? `Bronze Winner: ${bronze.winnerTeam.teamCode}` : 'Scheduled'}
+                  {bronze?.winnerTeam ? `Hạng 3: ${bronze.winnerTeam.player1.name} & ${bronze.winnerTeam.player2.name}` : 'Đã lên lịch'}
                 </span>
               </div>
             </div>
@@ -343,7 +466,7 @@ export default function StandingsPage() {
           <div className="space-y-6">
             <h3 className="text-xs font-black uppercase tracking-wider text-sai-yellow text-center flex items-center justify-center gap-1.5">
               <Trophy className="h-4 w-4" />
-              CHAMPIONSHIP FINAL
+              CHUNG KẾT VÔ ĐỊCH (FINAL)
             </h3>
 
             <div className="rounded-3xl border-2 border-sai-yellow/50 bg-gradient-to-b from-yellow-950/20 via-slate-900 to-sai-navy-950 p-6 shadow-2xl relative overflow-hidden group">
@@ -361,10 +484,10 @@ export default function StandingsPage() {
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
                   <div>
                     <span className="font-black text-sm text-white">
-                      {final?.teamA.teamCode || 'Winner SF1'}
+                      {final?.teamA ? `${final.teamA.player1.name} & ${final.teamA.player2.name}` : 'Thắng BK 1'}
                     </span>
-                    <span className="block text-[10px] text-slate-400">
-                      {final?.teamA.player1.name} & {final?.teamA.player2.name}
+                    <span className="block text-[10px] text-slate-400 font-mono">
+                      {final?.teamA.teamCode}
                     </span>
                   </div>
                   <span className="font-mono font-black text-2xl text-sai-cyan">
@@ -375,10 +498,10 @@ export default function StandingsPage() {
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
                   <div>
                     <span className="font-black text-sm text-white">
-                      {final?.teamB.teamCode || 'Winner SF2'}
+                      {final?.teamB ? `${final.teamB.player1.name} & ${final.teamB.player2.name}` : 'Thắng BK 2'}
                     </span>
-                    <span className="block text-[10px] text-slate-400">
-                      {final?.teamB.player1.name} & {final?.teamB.player2.name}
+                    <span className="block text-[10px] text-slate-400 font-mono">
+                      {final?.teamB.teamCode}
                     </span>
                   </div>
                   <span className="font-mono font-black text-2xl text-sai-yellow">
@@ -391,10 +514,10 @@ export default function StandingsPage() {
                 {final?.winnerTeam ? (
                   <div className="text-sm font-black text-sai-yellow flex items-center justify-center gap-1.5 animate-bounce">
                     <Trophy className="h-4 w-4" />
-                    <span>CHAMPION: {final.winnerTeam.teamCode}</span>
+                    <span>VÔ ĐỊCH: {final.winnerTeam.player1.name} & {final.winnerTeam.player2.name} ({final.winnerTeam.teamCode})</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-500 font-bold">Scheduled for Grand Finals</span>
+                  <span className="text-xs text-slate-500 font-bold">Chờ thi đấu chung kết</span>
                 )}
               </div>
             </div>
@@ -404,4 +527,3 @@ export default function StandingsPage() {
     </div>
   );
 }
-

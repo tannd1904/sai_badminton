@@ -8,3 +8,4 @@ echo.
 echo Database containers status:
 docker ps
 pause
+

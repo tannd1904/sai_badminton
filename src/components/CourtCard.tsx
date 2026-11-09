@@ -97,20 +97,18 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
 
       {activeMatch ? (
         <div className="flex-1 flex flex-col justify-between py-4">
-          {/* Match Code & 10-Min Timer Pill */}
+          {/* Match Code & Match Clock Pill */}
           <div className="flex items-center justify-between text-xs mb-3 text-slate-400">
             <span className="font-mono font-bold text-white text-xs">{activeMatch.matchCode}</span>
-            {activeMatch.rulesMode === 'SINGLE_SET_10MIN' && (
-              <div className="flex items-center gap-1.5 font-mono text-xs font-bold bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800 text-sai-yellow">
-                <Clock className="h-3 w-3 text-sai-yellow" />
-                <span>{formatTimer(activeMatch.timerRemainingSeconds)}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 font-mono text-xs font-bold bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800 text-sai-yellow">
+              <Clock className="h-3 w-3 text-sai-yellow" />
+              <span>{formatTimer(activeMatch.timerRemainingSeconds)}</span>
+            </div>
           </div>
 
           {/* Teams & Realtime Scoreboard Display */}
           <div className="grid grid-cols-7 items-center gap-2 my-2">
-            {/* Team Left */}
+            {/* Team Left - Athlete names prominent */}
             <div className="col-span-3 text-center">
               <div
                 className={`p-3 rounded-2xl border transition-all ${
@@ -120,19 +118,21 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
                 }`}
               >
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <h4 className="text-base sm:text-lg font-black text-white">{teamLeft?.teamCode}</h4>
+                  <div className="text-sm sm:text-base font-black text-white leading-tight">
+                    <div>{teamLeft?.player1.name}</div>
+                    <div className="text-slate-300 font-bold">{teamLeft?.player2.name}</div>
+                  </div>
                   {winnerId === teamLeft?.id && (
-                    <Trophy className="h-3.5 w-3.5 text-sai-yellow" />
+                    <Trophy className="h-4 w-4 text-sai-yellow shrink-0 ml-1" />
                   )}
                 </div>
-                <div className="text-[11px] text-slate-400 truncate font-medium">
-                  {teamLeft?.player1.name}
-                </div>
-                <div className="text-[11px] text-slate-400 truncate font-medium">
-                  {teamLeft?.player2.name}
-                </div>
-                <div className="mt-2 text-[10px] font-bold text-slate-500">
-                  Power: {teamLeft?.totalPower}
+                <div className="mt-1.5 flex items-center justify-center gap-1">
+                  <span className="rounded bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
+                    {teamLeft?.teamCode}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    {teamLeft?.totalPower}p
+                  </span>
                 </div>
               </div>
             </div>
@@ -161,7 +161,7 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
               </span>
             </div>
 
-            {/* Team Right */}
+            {/* Team Right - Athlete names prominent */}
             <div className="col-span-3 text-center">
               <div
                 className={`p-3 rounded-2xl border transition-all ${
@@ -171,19 +171,21 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
                 }`}
               >
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <h4 className="text-base sm:text-lg font-black text-white">{teamRight?.teamCode}</h4>
+                  <div className="text-sm sm:text-base font-black text-white leading-tight">
+                    <div>{teamRight?.player1.name}</div>
+                    <div className="text-slate-300 font-bold">{teamRight?.player2.name}</div>
+                  </div>
                   {winnerId === teamRight?.id && (
-                    <Trophy className="h-3.5 w-3.5 text-sai-yellow" />
+                    <Trophy className="h-4 w-4 text-sai-yellow shrink-0 ml-1" />
                   )}
                 </div>
-                <div className="text-[11px] text-slate-400 truncate font-medium">
-                  {teamRight?.player1.name}
-                </div>
-                <div className="text-[11px] text-slate-400 truncate font-medium">
-                  {teamRight?.player2.name}
-                </div>
-                <div className="mt-2 text-[10px] font-bold text-slate-500">
-                  Power: {teamRight?.totalPower}
+                <div className="mt-1.5 flex items-center justify-center gap-1">
+                  <span className="rounded bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-yellow">
+                    {teamRight?.teamCode}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    {teamRight?.totalPower}p
+                  </span>
                 </div>
               </div>
             </div>
@@ -226,18 +228,43 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
         </div>
       )}
 
-      {/* On Deck / Upcoming Match Teaser */}
+      {/* On Deck Next Match - Prominent Display for Athletes Preparation */}
       {nextMatch && (
-        <div className="mt-auto border-t border-slate-800 bg-slate-950/60 -mx-5 -mb-5 p-3 rounded-b-3xl">
-          <div className="flex items-center justify-between text-[10px] text-slate-400">
-            <span className="uppercase font-bold tracking-wider text-slate-500">On Deck Next</span>
-            <span className="font-mono text-sai-cyan">{nextMatch.matchCode} ({nextMatch.category})</span>
-          </div>
-          <div className="mt-1 flex items-center justify-between text-xs font-semibold text-slate-200">
-            <span>{nextMatch.teamA.teamCode} vs {nextMatch.teamB.teamCode}</span>
-            <span className="text-[10px] text-slate-500">
-              {nextMatch.startTime ? new Date(nextMatch.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+        <div className="mt-auto border-t-2 border-sai-yellow/30 bg-gradient-to-r from-amber-950/30 via-slate-950 to-slate-950 -mx-5 -mb-5 p-3.5 rounded-b-3xl">
+          <div className="flex items-center justify-between text-[10px] mb-2">
+            <span className="flex items-center gap-1.5 font-black text-sai-yellow uppercase tracking-wider">
+              <span className="h-2 w-2 rounded-full bg-sai-yellow animate-ping" />
+              ⚡ Trận tiếp theo · VĐV chuẩn bị ra sân
             </span>
+            <span className="font-mono font-bold text-sai-cyan">
+              {nextMatch.matchCode} ({nextMatch.category})
+            </span>
+          </div>
+
+          <div className="grid grid-cols-5 items-center gap-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
+            <div className="col-span-2 text-left truncate">
+              <span className="font-black text-white block truncate leading-tight">
+                {nextMatch.teamA.player1.name} & {nextMatch.teamA.player2.name}
+              </span>
+              <span className="inline-block mt-0.5 text-[10px] font-mono font-bold text-sai-cyan">
+                {nextMatch.teamA.teamCode}
+              </span>
+            </div>
+
+            <div className="col-span-1 text-center">
+              <span className="rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[9px] font-black text-sai-yellow uppercase">
+                VS
+              </span>
+            </div>
+
+            <div className="col-span-2 text-right truncate">
+              <span className="font-black text-white block truncate leading-tight">
+                {nextMatch.teamB.player1.name} & {nextMatch.teamB.player2.name}
+              </span>
+              <span className="inline-block mt-0.5 text-[10px] font-mono font-bold text-sai-yellow">
+                {nextMatch.teamB.teamCode}
+              </span>
+            </div>
           </div>
         </div>
       )}

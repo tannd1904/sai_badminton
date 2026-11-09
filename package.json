@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node launcher.js",
-    "build": "next build",
+    "build": "node launcher.js build",
     "start": "node launcher.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",

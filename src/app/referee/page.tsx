@@ -36,8 +36,8 @@ export default function RefereePage() {
   const [showEndMatchModal, setShowEndMatchModal] = useState(false);
   const [matchWinnerCandidate, setMatchWinnerCandidate] = useState<string | null>(null);
 
-  // Timer states
-  const [timerSeconds, setTimerSeconds] = useState<number>(600);
+  // Timer states (Stopwatch count-up)
+  const [timerSeconds, setTimerSeconds] = useState<number>(0);
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -59,7 +59,9 @@ export default function RefereePage() {
         setActiveMatch(candidate);
 
         if (candidate) {
-          setTimerSeconds(candidate.timerRemainingSeconds ?? 600);
+          // If candidate has a saved timer value (<600), use it; otherwise start from 0
+          const initialSecs = candidate.timerRemainingSeconds && candidate.timerRemainingSeconds < 600 ? candidate.timerRemainingSeconds : 0;
+          setTimerSeconds(initialSecs);
           setTimerRunning(candidate.timerIsRunning ?? false);
           // fetch full match audit log
           fetchMatchDetails(candidate.id);
@@ -114,19 +116,11 @@ export default function RefereePage() {
     return () => unsubscribe();
   }, [activeMatch, subscribeToScore]);
 
-  // Timer logic
+  // Stopwatch timer logic (counts UP from 00:00 to track match duration)
   useEffect(() => {
     if (timerRunning) {
       timerIntervalRef.current = setInterval(() => {
-        setTimerSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerIntervalRef.current!);
-            setTimerRunning(false);
-            soundManager.playBuzzer(); // BUZZER ALERT at 0:00!
-            return 0;
-          }
-          return prev - 1;
-        });
+        setTimerSeconds((prev) => prev + 1);
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
@@ -157,7 +151,18 @@ export default function RefereePage() {
 
   const resetTimer = () => {
     setTimerRunning(false);
-    setTimerSeconds(600);
+    setTimerSeconds(0);
+    if (activeMatch) {
+      fetch(`/api/matches/${activeMatch.id}/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'UPDATE_TIMER',
+          timerRemainingSeconds: 0,
+          timerIsRunning: false,
+        }),
+      }).catch(console.error);
+    }
   };
 
   // Perform score mutations with optimistic UI update
@@ -330,16 +335,17 @@ export default function RefereePage() {
               const selected = matches.find((m) => m.id === e.target.value);
               if (selected) {
                 setActiveMatch(selected);
-                setTimerSeconds(selected.timerRemainingSeconds ?? 600);
+                const initialSecs = selected.timerRemainingSeconds && selected.timerRemainingSeconds < 600 ? selected.timerRemainingSeconds : 0;
+                setTimerSeconds(initialSecs);
                 setTimerRunning(selected.timerIsRunning ?? false);
                 fetchMatchDetails(selected.id);
               }
             }}
-            className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-sai-cyan"
+            className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-sai-cyan max-w-[320px] truncate"
           >
             {matches.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.matchCode} ({m.category}) - {m.teamA.teamCode} vs {m.teamB.teamCode} [{m.status}]
+                {m.matchCode} ({m.category}): {m.teamA.player1.name} & {m.teamA.player2.name} ({m.teamA.teamCode}) vs {m.teamB.player1.name} & {m.teamB.player2.name} ({m.teamB.teamCode}) [{m.status}]
               </option>
             ))}
           </select>
@@ -388,50 +394,50 @@ export default function RefereePage() {
             </div>
           </div>
 
-          {/* 10-Minute Countdown Timer Widget */}
-          {activeMatch.rulesMode === 'SINGLE_SET_10MIN' && (
-            <div className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/90 p-3 shadow-lg">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl font-mono text-xl font-black ${
-                    timerSeconds <= 60
-                      ? 'bg-rose-950 text-rose-400 border border-rose-500 animate-pulse'
-                      : 'bg-slate-950 text-sai-yellow border border-slate-800'
-                  }`}
-                >
-                  <Clock className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">10-Min Match Clock</div>
-                  <div className={`font-mono text-2xl font-black ${timerSeconds <= 60 ? 'text-rose-400' : 'text-white'}`}>
-                    {formatTime(timerSeconds)}
-                  </div>
-                </div>
+          {/* Match Elapsed Duration Stopwatch Widget */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/90 p-3.5 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-xl font-mono text-xl font-black transition-all ${
+                  timerRunning
+                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-500 animate-pulse shadow-md shadow-emerald-500/20'
+                    : 'bg-slate-950 text-sai-cyan border border-slate-800'
+                }`}
+              >
+                <Clock className="h-6 w-6" />
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleTimer}
-                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2 font-bold text-xs uppercase tracking-wider transition ${
-                    timerRunning
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
-                      : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black shadow-lg shadow-emerald-500/20'
-                  }`}
-                >
-                  {timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  <span>{timerRunning ? 'Pause' : 'Start'}</span>
-                </button>
-
-                <button
-                  onClick={resetTimer}
-                  className="rounded-xl border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:text-white"
-                  title="Reset Timer to 10:00"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                  Thời gian thi đấu (Match Stopwatch)
+                </div>
+                <div className="font-mono text-2xl font-black text-white">
+                  {formatTime(timerSeconds)}
+                </div>
               </div>
             </div>
-          )}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTimer}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 font-black text-xs uppercase tracking-wider transition ${
+                  timerRunning
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                    : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-lg shadow-emerald-500/20'
+                }`}
+              >
+                {timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                <span>{timerRunning ? 'Tạm dừng' : 'Bắt đầu'}</span>
+              </button>
+
+              <button
+                onClick={resetTimer}
+                className="rounded-xl border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:text-white"
+                title="Đặt lại đồng hồ về 00:00"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
 
           {/* MASSIVE TOUCH SCOREBOARD (Referee Main Canvas) */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -439,19 +445,27 @@ export default function RefereePage() {
             <div className="flex flex-col rounded-3xl border-2 border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-sai-navy-950 p-4 shadow-2xl relative overflow-hidden">
               <div className="flex items-center justify-between mb-2">
                 <span className="rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300">
-                  Side: {isSwitched ? 'Right Court' : 'Left Court'}
+                  {isSwitched ? 'Sân Phải' : 'Sân Trái'}
                 </span>
                 <span className="font-extrabold text-xs text-sai-cyan tracking-wider">
                   TEAM {leftTeamLetter}
                 </span>
               </div>
 
-              {/* Team Name and Players */}
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-black text-white">{leftTeam?.teamCode}</h3>
-                <p className="text-xs text-slate-400 font-medium truncate">
-                  {leftTeam?.player1.name} & {leftTeam?.player2.name}
-                </p>
+              {/* Team Name and Players - Athlete Names Large & Prominent */}
+              <div className="text-center mb-3 min-h-[64px] flex flex-col justify-center">
+                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  <div>{leftTeam?.player1.name}</div>
+                  <div className="text-slate-300 font-bold">{leftTeam?.player2.name}</div>
+                </h3>
+                <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                  <span className="rounded-full bg-sai-cyan/20 border border-sai-cyan/40 px-2.5 py-0.5 text-xs font-mono font-black text-sai-cyan">
+                    {leftTeam?.teamCode}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-bold">
+                    ({leftTeam?.totalPower} điểm)
+                  </span>
+                </div>
               </div>
 
               {/* MASSIVE SCORE BUTTON (+1 POINT) */}
@@ -463,7 +477,7 @@ export default function RefereePage() {
                   {leftScore}
                 </span>
                 <span className="mt-2 text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-3 py-1 rounded-full group-hover:scale-105 transition-transform">
-                  +1 POINT
+                  +1 ĐIỂM
                 </span>
               </button>
 
@@ -484,19 +498,27 @@ export default function RefereePage() {
             <div className="flex flex-col rounded-3xl border-2 border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-sai-navy-950 p-4 shadow-2xl relative overflow-hidden">
               <div className="flex items-center justify-between mb-2">
                 <span className="rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300">
-                  Side: {isSwitched ? 'Left Court' : 'Right Court'}
+                  {isSwitched ? 'Sân Trái' : 'Sân Phải'}
                 </span>
                 <span className="font-extrabold text-xs text-sai-yellow tracking-wider">
                   TEAM {rightTeamLetter}
                 </span>
               </div>
 
-              {/* Team Name and Players */}
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-black text-white">{rightTeam?.teamCode}</h3>
-                <p className="text-xs text-slate-400 font-medium truncate">
-                  {rightTeam?.player1.name} & {rightTeam?.player2.name}
-                </p>
+              {/* Team Name and Players - Athlete Names Large & Prominent */}
+              <div className="text-center mb-3 min-h-[64px] flex flex-col justify-center">
+                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                  <div>{rightTeam?.player1.name}</div>
+                  <div className="text-slate-300 font-bold">{rightTeam?.player2.name}</div>
+                </h3>
+                <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                  <span className="rounded-full bg-sai-yellow/20 border border-sai-yellow/40 px-2.5 py-0.5 text-xs font-mono font-black text-sai-yellow">
+                    {rightTeam?.teamCode}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-bold">
+                    ({rightTeam?.totalPower} điểm)
+                  </span>
+                </div>
               </div>
 
               {/* MASSIVE SCORE BUTTON (+1 POINT) */}
@@ -508,7 +530,7 @@ export default function RefereePage() {
                   {rightScore}
                 </span>
                 <span className="mt-2 text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-3 py-1 rounded-full group-hover:scale-105 transition-transform">
-                  +1 POINT
+                  +1 ĐIỂM
                 </span>
               </button>
 
@@ -625,31 +647,58 @@ export default function RefereePage() {
               </div>
             </div>
 
+            {/* Recorded Match Duration */}
+            <div className="flex items-center justify-between p-3 mb-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-sai-cyan" />
+                Thời lượng trận đấu (Duration):
+              </span>
+              <span className="font-mono text-base font-black text-sai-yellow">
+                {formatTime(timerSeconds)}
+              </span>
+            </div>
+
             <p className="text-xs text-slate-300 mb-4">
-              Please verify the final score and select the winning team to finalize and broadcast the official result to the spectator portal:
+              Vui lòng xác minh tỉ số và chọn cặp vận động viên chiến thắng để lưu thời gian và phát trực tiếp kết quả:
             </p>
 
             <div className="grid grid-cols-2 gap-3 mb-6">
               <button
                 onClick={() => handleConfirmFinishMatch(activeMatch.teamAId)}
-                className="p-4 rounded-2xl border-2 border-sai-cyan/40 bg-sai-cyan/10 hover:bg-sai-cyan/20 text-center transition"
+                className="p-4 rounded-2xl border-2 border-sai-cyan/40 bg-sai-cyan/10 hover:bg-sai-cyan/20 text-center transition group"
               >
-                <div className="font-black text-lg text-white">{activeMatch.teamA.teamCode}</div>
-                <div className="text-2xl font-black text-sai-cyan font-mono mt-1">
+                <div className="font-black text-sm text-white leading-tight">
+                  <div>{activeMatch.teamA.player1.name}</div>
+                  <div className="text-slate-300">{activeMatch.teamA.player2.name}</div>
+                </div>
+                <div className="mt-1.5 inline-block rounded-md bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[11px] font-mono font-bold text-sai-cyan">
+                  {activeMatch.teamA.teamCode}
+                </div>
+                <div className="text-3xl font-black text-sai-cyan font-mono mt-2">
                   {currentSet.teamAScore}
                 </div>
-                <div className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Confirm Winner</div>
+                <div className="mt-2 text-[10px] font-black text-slate-400 uppercase tracking-wider group-hover:text-sai-cyan transition">
+                  Xác nhận Thắng
+                </div>
               </button>
 
               <button
                 onClick={() => handleConfirmFinishMatch(activeMatch.teamBId)}
-                className="p-4 rounded-2xl border-2 border-sai-yellow/40 bg-sai-yellow/10 hover:bg-sai-yellow/20 text-center transition"
+                className="p-4 rounded-2xl border-2 border-sai-yellow/40 bg-sai-yellow/10 hover:bg-sai-yellow/20 text-center transition group"
               >
-                <div className="font-black text-lg text-white">{activeMatch.teamB.teamCode}</div>
-                <div className="text-2xl font-black text-sai-yellow font-mono mt-1">
+                <div className="font-black text-sm text-white leading-tight">
+                  <div>{activeMatch.teamB.player1.name}</div>
+                  <div className="text-slate-300">{activeMatch.teamB.player2.name}</div>
+                </div>
+                <div className="mt-1.5 inline-block rounded-md bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[11px] font-mono font-bold text-sai-yellow">
+                  {activeMatch.teamB.teamCode}
+                </div>
+                <div className="text-3xl font-black text-sai-yellow font-mono mt-2">
                   {currentSet.teamBScore}
                 </div>
-                <div className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Confirm Winner</div>
+                <div className="mt-2 text-[10px] font-black text-slate-400 uppercase tracking-wider group-hover:text-sai-yellow transition">
+                  Xác nhận Thắng
+                </div>
               </button>
             </div>
 
