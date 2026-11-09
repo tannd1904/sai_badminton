@@ -106,8 +106,8 @@ async function bootstrap() {
     });
   });
 
-  server.listen(port, () => {
-    console.log(`> SAI Badminton Championship Server ready on http://localhost:${port}`);
+  server.listen(port, hostname, () => {
+    console.log(`> SAI Badminton Championship Server ready on http://${hostname}:${port}`);
     console.log(`> Real-time Socket.io & Redis Pub/Sub running`);
   });
 }

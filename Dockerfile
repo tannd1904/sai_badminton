@@ -38,3 +38,4 @@ COPY --from=builder /app/launcher.js ./launcher.js
 EXPOSE 3000
 
 CMD ["node", "launcher.js", "start"]
+
