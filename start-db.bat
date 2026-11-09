@@ -1,11 +1,13 @@
 @echo off
-title Start Badminton Database & Redis Containers
-echo ===================================================
-echo  Starting PostgreSQL (5432) & Redis (6379)...
-echo ===================================================
+echo ========================================================
+echo   SAI Badminton Championship - Database & Redis Starter
+echo ========================================================
+echo.
+echo Starting Docker containers (badminton_postgres, badminton_redis)...
 docker compose up -d
 echo.
-echo Database containers status:
-docker ps
+docker ps --filter "name=badminton"
+echo.
+echo Database is ready on localhost:5432 and Redis on localhost:6379!
+echo.
 pause
-

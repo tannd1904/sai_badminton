@@ -4,8 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '@/lib/socket-client';
 import { MatchData } from '@/types';
 import { Maximize2, Minimize2, Tv, Clock, Trophy } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export default function TVScoreboardPage() {
+  const { t, locale } = useLanguage();
   const { subscribeToScore, subscribeToMatchStatus } = useSocket();
   const [selectedCourt, setSelectedCourt] = useState<number | 'ALL'>('ALL');
   const [matches, setMatches] = useState<MatchData[]>([]);
@@ -89,7 +91,9 @@ export default function TVScoreboardPage() {
     if (!match) {
       return (
         <div className="flex flex-col items-center justify-center p-12 bg-slate-900/60 rounded-3xl border border-slate-800 text-slate-500">
-          <p className="text-xl font-bold">Court {courtNum} Currently Idle</p>
+          <p className="text-xl font-bold">
+            {locale === 'vi' ? `Sân ${courtNum} hiện đang trống` : `Court ${courtNum} Currently Idle`}
+          </p>
         </div>
       );
     }
@@ -115,7 +119,9 @@ export default function TVScoreboardPage() {
               C{courtNum}
             </span>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white">Court {courtNum} Live</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                {locale === 'vi' ? `Sân ${courtNum} Trực Tiếp` : `Court ${courtNum} Live`}
+              </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="font-mono text-xs font-bold text-sai-cyan">{match.matchCode}</span>
                 <span className="text-xs text-slate-400">·</span>
@@ -216,7 +222,9 @@ export default function TVScoreboardPage() {
       <div className="flex items-center justify-between mb-6 bg-slate-900/90 border border-slate-800 p-3 rounded-2xl backdrop-blur-md">
         <div className="flex items-center gap-2">
           <Tv className="h-5 w-5 text-sai-cyan" />
-          <span className="text-sm font-extrabold text-white">SAI Arena Big-Screen TV Scoreboard</span>
+          <span className="text-sm font-extrabold text-white">
+            {locale === 'vi' ? 'Bảng Điểm Màn Hình TV - Nhà Thi Đấu SAI' : 'SAI Arena Big-Screen TV Scoreboard'}
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -232,7 +240,13 @@ export default function TVScoreboardPage() {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {c === 'ALL' ? 'All 3 Courts' : `Court ${c}`}
+                {c === 'ALL'
+                  ? locale === 'vi'
+                    ? 'Tất cả các sân'
+                    : 'All 3 Courts'
+                  : locale === 'vi'
+                  ? `Sân ${c}`
+                  : `Court ${c}`}
               </button>
             ))}
           </div>
@@ -242,7 +256,7 @@ export default function TVScoreboardPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-bold text-white hover:bg-slate-700 transition"
           >
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+            <span>{isFullscreen ? t('tv.exitFullscreen') : t('tv.fullscreen')}</span>
           </button>
         </div>
       </div>

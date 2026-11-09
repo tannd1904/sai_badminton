@@ -4,9 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '@/lib/socket-client';
 import { Trophy, Medal, Award, Flame, ChevronRight, RefreshCw, GitBranch, Users } from 'lucide-react';
 import { GroupStandingItem, MatchData, TeamData } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 export default function StandingsPage() {
   const { subscribeToScore, subscribeToMatchStatus } = useSocket();
+  const { t, locale } = useLanguage();
   const [activeTab, setActiveTab] = useState<'XD' | 'MD'>('XD');
   const [standings, setStandings] = useState<{
     xdGroupA: GroupStandingItem[];
@@ -97,7 +99,7 @@ export default function StandingsPage() {
           <span>{title}</span>
         </h3>
         <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-md">
-          Top 2 Advance to Semis
+          {t('standings.group.top2')}
         </span>
       </div>
 
@@ -105,14 +107,14 @@ export default function StandingsPage() {
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
-              <th className="py-2.5 px-2 text-center">Hạng</th>
-              <th className="py-2.5 px-3">Vận Động Viên (Roster)</th>
-              <th className="py-2.5 px-2 text-center">Trận</th>
-              <th className="py-2.5 px-2 text-center">Thắng</th>
-              <th className="py-2.5 px-2 text-center">Thua</th>
-              <th className="py-2.5 px-2 text-center">Hiệu Số Set</th>
-              <th className="py-2.5 px-2 text-center">Hiệu Số Điểm</th>
-              <th className="py-2.5 px-3 text-center font-black text-sai-cyan">ĐIỂM</th>
+              <th className="py-2.5 px-2 text-center">{t('standings.table.pos')}</th>
+              <th className="py-2.5 px-3">{t('standings.table.team')}</th>
+              <th className="py-2.5 px-2 text-center">{t('standings.table.played')}</th>
+              <th className="py-2.5 px-2 text-center">{t('standings.table.won')}</th>
+              <th className="py-2.5 px-2 text-center">{t('standings.table.lost')}</th>
+              <th className="py-2.5 px-2 text-center">{t('standings.table.setDiff')}</th>
+              <th className="py-2.5 px-2 text-center">{t('standings.table.ptDiff')}</th>
+              <th className="py-2.5 px-3 text-center font-black text-sai-cyan">{t('standings.table.points')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -180,10 +182,10 @@ export default function StandingsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
             <Trophy className="h-7 w-7 text-sai-yellow" />
-            <span>Bảng Đấu & Danh Sách Cặp Đấu</span>
+            <span>{t('standings.title')}</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Bảng ghép cặp toàn bộ 8 đội, bảng xếp hạng vòng bảng tự động theo luật BWF và sơ đồ vòng loại trực tiếp Playoff
+            {t('standings.subtitle')}
           </p>
         </div>
 
@@ -197,7 +199,7 @@ export default function StandingsPage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🏸 Đôi Nam Nữ (XD)
+              🏸 {t('standings.tab.xd')}
             </button>
             <button
               onClick={() => setActiveTab('MD')}
@@ -207,7 +209,7 @@ export default function StandingsPage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🏸 Đôi Nam (MD)
+              🏸 {t('standings.tab.md')}
             </button>
           </div>
 
@@ -221,19 +223,19 @@ export default function StandingsPage() {
         </div>
       </div>
 
-      {/* SECTION 1: BẢNG GHÉP CẶP TOÀN BỘ 8 ĐỘI (Exact layout as user reference images) */}
+      {/* SECTION 1: BẢNG GHÉP CẶP TOÀN BỘ 8 ĐỘI */}
       <div className="mb-10 rounded-3xl border border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-2xl backdrop-blur-md">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-sai-cyan">
-              {activeTab === 'XD' ? 'II. Nội dung Đôi Nam Nữ (Mixed Doubles)' : 'I. Nội dung Đôi Nam (Men\'s Doubles)'}
+              {activeTab === 'XD' ? (locale === 'vi' ? 'II. Nội dung Đôi Nam Nữ (Mixed Doubles)' : 'II. Mixed Doubles (XD)') : (locale === 'vi' ? 'I. Nội dung Đôi Nam (Men\'s Doubles)' : 'I. Men\'s Doubles (MD)')}
             </span>
             <h2 className="text-lg font-black text-white mt-0.5">
-              1. Bảng ghép cặp toàn bộ 8 đội
+              {t('standings.roster.title')}
             </h2>
           </div>
           <span className="text-xs text-slate-400 bg-slate-800/80 px-3 py-1 rounded-xl font-medium">
-            Tổng cộng: 8 cặp đấu (2 bảng A & B)
+            {locale === 'vi' ? 'Tổng cộng: 8 cặp đấu (2 bảng A & B)' : 'Total: 8 pairs (Groups A & B)'}
           </span>
         </div>
 
@@ -241,15 +243,15 @@ export default function StandingsPage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[11px]">
-                <th className="py-3 px-3">Mã cặp</th>
+                <th className="py-3 px-3">{t('standings.roster.code')}</th>
                 <th className="py-3 px-4">
-                  {activeTab === 'XD' ? 'VĐV Nam (Pool 1)' : 'VĐV Nam 1 (Pool 1)'}
+                  {activeTab === 'XD' ? t('standings.roster.male1') : t('standings.roster.male1_md')}
                 </th>
                 <th className="py-3 px-4">
-                  {activeTab === 'XD' ? 'VĐV Nữ (Pool 3)' : 'VĐV Nam 2 (Pool 2)'}
+                  {activeTab === 'XD' ? t('standings.roster.female') : t('standings.roster.male2_md')}
                 </th>
-                <th className="py-3 px-3 text-center">Tổng điểm</th>
-                <th className="py-3 px-3 text-center">Bảng đấu</th>
+                <th className="py-3 px-3 text-center">{t('standings.roster.totalPower')}</th>
+                <th className="py-3 px-3 text-center">{locale === 'vi' ? 'Bảng đấu' : 'Group'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -262,20 +264,20 @@ export default function StandingsPage() {
                     </span>
                   </td>
 
-                  {/* VĐV Nam (Pool 1) - Tên lớn, điểm kèm theo */}
+                  {/* VĐV Nam (Pool 1) - Tên lớn kèm điểm số (Score) */}
                   <td className="py-3.5 px-4">
-                    <div className="font-black text-sm text-white">{pair.player1.name}</div>
-                    <div className="text-[11px] font-bold text-sai-cyan font-mono mt-0.5">
-                      Điểm: {pair.player1.powerRating}
-                    </div>
+                    <span className="font-extrabold text-sm text-white">{pair.player1.name}</span>{' '}
+                    <span className="inline-block rounded bg-sai-cyan/15 text-sai-cyan border border-cyan-500/30 px-1.5 py-0.5 text-xs font-mono font-bold">
+                      ({pair.player1.powerRating})
+                    </span>
                   </td>
 
-                  {/* VĐV 2 (Pool 3 hoặc Pool 2) - Tên lớn, điểm kèm theo */}
+                  {/* VĐV 2 (Pool 3 hoặc Pool 2) - Tên lớn kèm điểm số (Score) */}
                   <td className="py-3.5 px-4">
-                    <div className="font-black text-sm text-white">{pair.player2.name}</div>
-                    <div className="text-[11px] font-bold text-sai-yellow font-mono mt-0.5">
-                      Điểm: {pair.player2.powerRating}
-                    </div>
+                    <span className="font-extrabold text-sm text-white">{pair.player2.name}</span>{' '}
+                    <span className="inline-block rounded bg-sai-yellow/15 text-sai-yellow border border-yellow-500/30 px-1.5 py-0.5 text-xs font-mono font-bold">
+                      ({pair.player2.powerRating})
+                    </span>
                   </td>
 
                   {/* Tổng điểm */}

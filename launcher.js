@@ -37,6 +37,15 @@ if (cmd === 'build') {
       PATH: envPath,
     },
   });
+} else if (cmd === 'seed') {
+  const tsxCli = path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  child = spawn(execPath, [tsxCli, 'prisma/seed.ts'], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PATH: envPath,
+    },
+  });
 } else {
   // Find tsx binary
   const tsxCli = path.join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');

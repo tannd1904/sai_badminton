@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MatchData } from '@/types';
 import { Clock, Shield, Users, Trophy } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface CourtCardProps {
   courtNumber: number;
@@ -12,6 +13,7 @@ interface CourtCardProps {
 }
 
 export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProps) {
+  const { t, locale } = useLanguage();
   const [prevScoreA, setPrevScoreA] = useState(0);
   const [prevScoreB, setPrevScoreB] = useState(0);
   const [scoreBumpingA, setScoreBumpingA] = useState(false);
@@ -65,8 +67,10 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
             C{courtNumber}
           </span>
           <div>
-            <h3 className="font-extrabold text-white text-sm">Court {courtNumber}</h3>
-            <p className="text-[10px] text-slate-400 font-medium">SAI Digital Arena</p>
+            <h3 className="font-extrabold text-white text-sm">
+              {locale === 'vi' ? `Sân ${courtNumber}` : `Court ${courtNumber}`}
+            </h3>
+            <p className="text-[10px] text-slate-400 font-medium">{t('court.arena')}</p>
           </div>
         </div>
 
@@ -87,11 +91,11 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
               {activeMatch.status === 'IN_PROGRESS' && (
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
               )}
-              {activeMatch.status}
+              {activeMatch.status === 'IN_PROGRESS' ? (locale === 'vi' ? 'Đang đấu' : 'IN PROGRESS') : activeMatch.status === 'COMPLETED' ? (locale === 'vi' ? 'Hoàn thành' : 'COMPLETED') : (locale === 'vi' ? 'Đã xếp lịch' : 'SCHEDULED')}
             </span>
           </div>
         ) : (
-          <span className="text-xs text-slate-500">Idle</span>
+          <span className="text-xs text-slate-500">{t('court.idle')}</span>
         )}
       </div>
 
@@ -214,17 +218,17 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
 
           {/* Referee indicator */}
           <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-800/60 pt-2">
-            <span>Umpire: {activeMatch.referee?.name || `Assigned Ref C${courtNumber}`}</span>
+            <span>{t('court.umpire')} {activeMatch.referee?.name || `${t('court.assigned')} C${courtNumber}`}</span>
             {activeMatch.winnerTeam && (
               <span className="text-emerald-400 font-bold">
-                Winner: {activeMatch.winnerTeam.teamCode}
+                {t('court.winner')} {activeMatch.winnerTeam.player1.name} & {activeMatch.winnerTeam.player2.name}
               </span>
             )}
           </div>
         </div>
       ) : (
         <div className="py-12 text-center text-slate-500 text-xs">
-          No active match currently on Court {courtNumber}.
+          {t('court.noActiveMatch')} {courtNumber}.
         </div>
       )}
 
@@ -234,7 +238,7 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
           <div className="flex items-center justify-between text-[10px] mb-2">
             <span className="flex items-center gap-1.5 font-black text-sai-yellow uppercase tracking-wider">
               <span className="h-2 w-2 rounded-full bg-sai-yellow animate-ping" />
-              ⚡ Trận tiếp theo · VĐV chuẩn bị ra sân
+              {t('court.onDeckTitle')}
             </span>
             <span className="font-mono font-bold text-sai-cyan">
               {nextMatch.matchCode} ({nextMatch.category})

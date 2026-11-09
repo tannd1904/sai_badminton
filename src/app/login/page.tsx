@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Shield, Activity, Users, UserCheck, ArrowRight, Lock, Mail } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t, locale } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,9 +28,9 @@ export default function LoginPage() {
     setLoading(false);
     if (res?.error) {
       if (res.error.includes('Database server is offline')) {
-        setError('⚠️ PostgreSQL Database is offline at localhost:5432. Please start Docker Desktop (or run start-db.bat).');
+        setError(t('login.dbOffline'));
       } else {
-        setError('Invalid email or password (or database at localhost:5432 is offline).');
+        setError(t('login.invalidCredentials'));
       }
     } else {
       router.push('/');
@@ -46,58 +48,64 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (!res?.error) {
-      router.push(demoEmail.startsWith('referee') ? '/referee' : demoEmail.startsWith('admin') || demoEmail.startsWith('organizer') ? '/admin' : '/');
+      router.push(
+        demoEmail.startsWith('referee')
+          ? '/referee'
+          : demoEmail.startsWith('admin') || demoEmail.startsWith('organizer')
+          ? '/admin'
+          : '/'
+      );
       router.refresh();
     } else {
-      setError('⚠️ Cannot connect to PostgreSQL at localhost:5432. Please start Docker Desktop (or run start-db.bat).');
+      setError(t('login.dbOffline'));
     }
   };
 
   const demoAccounts = [
     {
-      title: 'Tournament Director',
+      title: t('login.directorTitle'),
       role: 'SUPER_ADMIN',
       email: 'admin@sai.digital',
       pass: 'admin123',
       color: 'from-amber-500/20 to-yellow-600/20 border-yellow-500/40 text-sai-yellow',
       icon: Shield,
-      target: 'Full control over schedule, override, refereeing & resets',
+      target: t('login.directorDesc'),
     },
     {
-      title: 'Tournament Ops Lead',
+      title: t('login.opsTitle'),
       role: 'ORGANIZER',
       email: 'organizer@sai.digital',
       pass: 'admin123',
       color: 'from-blue-500/20 to-indigo-600/20 border-blue-500/40 text-blue-400',
       icon: Users,
-      target: 'Collision prevention, roster pairing & webhooks',
+      target: t('login.opsDesc'),
     },
     {
-      title: 'Umpire Court 1',
+      title: t('login.umpire1Title'),
       role: 'REFEREE',
       email: 'referee1@sai.digital',
       pass: 'ref123',
       color: 'from-emerald-500/20 to-teal-600/20 border-emerald-500/40 text-emerald-400',
       icon: Activity,
-      target: 'Mobile touchpad, 10min timer, buzzer & score updates',
+      target: t('login.umpire1Desc'),
     },
     {
-      title: 'Umpire Court 2',
+      title: t('login.umpire2Title'),
       role: 'REFEREE',
       email: 'referee2@sai.digital',
       pass: 'ref123',
       color: 'from-cyan-500/20 to-sky-600/20 border-cyan-500/40 text-sai-cyan',
       icon: Activity,
-      target: 'Assigned to Court 2 live matches',
+      target: t('login.umpire2Desc'),
     },
     {
-      title: 'Spectator / Fan',
+      title: t('login.fanTitle'),
       role: 'SPECTATOR',
       email: 'spectator@sai.digital',
       pass: 'sai123456',
       color: 'from-slate-700/20 to-slate-800/20 border-slate-700 text-slate-300',
       icon: UserCheck,
-      target: 'Live courts, animated standings & knockout trees',
+      target: t('login.fanDesc'),
     },
   ];
 
@@ -108,10 +116,10 @@ export default function LoginPage() {
           🏸
         </div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          SAI Badminton Championship Login
+          {t('login.title')}
         </h1>
         <p className="text-slate-400 text-sm mt-1">
-          Sign in with your role-based credentials or use one-click demo login below
+          {t('login.subtitle')}
         </p>
       </div>
 
@@ -120,7 +128,7 @@ export default function LoginPage() {
         <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 p-6 rounded-2xl shadow-xl backdrop-blur-sm">
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <Lock className="h-4 w-4 text-sai-cyan" />
-            <span>Sign In</span>
+            <span>{t('login.signInBtn')}</span>
           </h2>
 
           {error && (
@@ -131,7 +139,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">{t('login.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                 <input
@@ -139,14 +147,14 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@sai.digital"
+                  placeholder="organizer@sai.digital"
                   className="w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-2.5 text-sm text-white focus:border-sai-cyan focus:outline-none focus:ring-1 focus:ring-sai-cyan placeholder:text-slate-600"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">{t('login.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                 <input
@@ -165,7 +173,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-xl bg-gradient-to-r from-sai-cyan to-blue-600 py-2.5 font-bold text-slate-950 hover:brightness-110 transition shadow-lg shadow-cyan-500/20 text-sm disabled:opacity-50"
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading ? t('login.authenticating') : t('login.signInBtn')}
             </button>
           </form>
         </div>
@@ -174,9 +182,9 @@ export default function LoginPage() {
         <div className="lg:col-span-7 space-y-3">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
-              ⚡ 1-Click Fast Role Sign-In
+              ⚡ {t('login.fastLoginTitle')}
             </h2>
-            <span className="text-[11px] text-slate-500">Pre-seeded accounts</span>
+            <span className="text-[11px] text-slate-500">{t('login.preSeeded')}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -210,4 +218,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

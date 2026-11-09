@@ -16,14 +16,17 @@ import {
   VolumeX,
   Wifi,
   WifiOff,
+  Globe,
 } from 'lucide-react';
 import { useSocket } from '@/lib/socket-client';
 import { soundManager } from '@/lib/sound';
+import { useLanguage } from '@/lib/i18n';
 
 export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { isConnected, latency } = useSocket();
+  const { locale, toggleLocale, t } = useLanguage();
   const [soundOn, setSoundOn] = useState(soundManager.isEnabled());
 
   const toggleSound = () => {
@@ -34,20 +37,20 @@ export function Navbar() {
 
   const role = (session?.user as any)?.role;
 
-  // Filter navigation items strictly based on role requirements:
-  // - REFEREE cannot see Organizer Center
-  // - ORGANIZER cannot see Referee Touchpad
-  // - SUPER_ADMIN sees both
+  // Filter navigation items strictly based on authentication & role:
+  // - If NOT logged in (!session): HIDE both Referee and Organizer tabs
+  // - If REFEREE: only show Referee Touchpad (hide Organizer)
+  // - If ORGANIZER: only show Organizer Center (hide Referee)
+  // - If SUPER_ADMIN: show both
+  const isReferee = Boolean(session && (role === 'REFEREE' || role === 'SUPER_ADMIN'));
+  const isOrganizer = Boolean(session && (role === 'ORGANIZER' || role === 'SUPER_ADMIN'));
+
   const navItems = [
-    { label: 'Live Courts', href: '/', icon: Tv },
-    { label: 'TV Scoreboard', href: '/tv', icon: Tv },
-    { label: 'Standings & Brackets', href: '/standings', icon: Trophy },
-    ...(role === 'ORGANIZER'
-      ? []
-      : [{ label: 'Referee Touchpad', href: '/referee', icon: Activity }]),
-    ...(role === 'REFEREE'
-      ? []
-      : [{ label: 'Organizer Center', href: '/admin', icon: Calendar }]),
+    { label: t('nav.liveCourts'), href: '/', icon: Tv },
+    { label: t('nav.tvScoreboard'), href: '/tv', icon: Tv },
+    { label: t('nav.standings'), href: '/standings', icon: Trophy },
+    ...(isReferee ? [{ label: t('nav.referee'), href: '/referee', icon: Activity }] : []),
+    ...(isOrganizer ? [{ label: t('nav.organizer'), href: '/admin', icon: Calendar }] : []),
   ];
 
   return (
@@ -66,7 +69,7 @@ export function Navbar() {
                   BCS 2024
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Badminton Championship Management</p>
+              <p className="text-[11px] text-slate-400 font-medium">{t('nav.subTitle')}</p>
             </div>
           </Link>
         </div>
@@ -117,10 +120,20 @@ export function Navbar() {
             )}
           </div>
 
+          {/* Language Switcher */}
+          <button
+            onClick={toggleLocale}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-colors text-xs font-bold"
+            title={locale === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+          >
+            <Globe className="h-3.5 w-3.5 text-sai-cyan" />
+            <span>{locale === 'vi' ? '🇻🇳 VN' : '🇬🇧 EN'}</span>
+          </button>
+
           {/* Sound toggle */}
           <button
             onClick={toggleSound}
-            aria-label={soundOn ? 'Mute buzzer sound' : 'Enable buzzer sound'}
+            aria-label={soundOn ? t('nav.soundOff') : t('nav.soundOn')}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-colors"
           >
             {soundOn ? <Volume2 className="h-4 w-4 text-sai-cyan" /> : <VolumeX className="h-4 w-4 text-slate-500" />}
@@ -137,7 +150,7 @@ export function Navbar() {
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
-                title="Sign out"
+                title={t('nav.logout')}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-rose-400 hover:border-rose-900/50 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
@@ -149,7 +162,7 @@ export function Navbar() {
               className="flex items-center gap-1.5 rounded-lg bg-sai-navy-800 hover:bg-sai-navy-700 border border-slate-700 px-3 py-1.5 text-xs font-semibold text-white transition-all shadow"
             >
               <LogIn className="h-3.5 w-3.5 text-sai-yellow" />
-              <span>Login</span>
+              <span>{t('nav.login')}</span>
             </Link>
           )}
         </div>

@@ -20,10 +20,12 @@ import {
   History,
 } from 'lucide-react';
 import { MatchData, AuditActionType } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 
 export default function RefereePage() {
   const { data: session } = useSession();
   const { isConnected, subscribeToScore } = useSocket();
+  const { t, locale } = useLanguage();
 
   const [selectedCourt, setSelectedCourt] = useState<number>(1);
   const [matches, setMatches] = useState<MatchData[]>([]);
@@ -322,7 +324,7 @@ export default function RefereePage() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Court {cNum}
+              {t('referee.court')} {cNum}
             </button>
           ))}
         </div>
@@ -353,7 +355,7 @@ export default function RefereePage() {
           <button
             onClick={() => setShowAuditDrawer(!showAuditDrawer)}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
-            title="Score Audit Log"
+            title={t('referee.auditLog')}
           >
             <History className="h-4 w-4" />
           </button>
@@ -370,7 +372,7 @@ export default function RefereePage() {
                 {activeMatch.category} - {activeMatch.roundType}
               </span>
               <span className="text-slate-400">
-                {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? '1 Set Sudden Death (21 pts / 10 min)' : 'Best of 3 Sets (21 pts deuce max 30)'}
+                {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? (locale === 'vi' ? '1 Set Knockout (21 điểm)' : '1 Set Sudden Death (21 pts)') : (locale === 'vi' ? 'BO3 (21 điểm, cách 2)' : 'Best of 3 Sets (21 pts deuce max 30)')}
               </span>
             </div>
 
@@ -384,11 +386,11 @@ export default function RefereePage() {
                     : 'bg-slate-800 text-slate-400'
                 }`}
               >
-                {activeMatch.status}
+                {activeMatch.status === 'IN_PROGRESS' ? (locale === 'vi' ? 'Đang đấu' : 'IN PROGRESS') : activeMatch.status === 'COMPLETED' ? (locale === 'vi' ? 'Hoàn thành' : 'COMPLETED') : (locale === 'vi' ? 'Đã xếp lịch' : 'SCHEDULED')}
               </span>
               {activeMatch.rulesMode === 'BO3' && (
                 <span className="rounded bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-300">
-                  Set {currentSetNum} of 3
+                  Set {currentSetNum} / 3
                 </span>
               )}
             </div>
@@ -408,7 +410,7 @@ export default function RefereePage() {
               </div>
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                  Thời gian thi đấu (Match Stopwatch)
+                  {t('referee.stopwatchTitle')}
                 </div>
                 <div className="font-mono text-2xl font-black text-white">
                   {formatTime(timerSeconds)}
@@ -426,13 +428,13 @@ export default function RefereePage() {
                 }`}
               >
                 {timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                <span>{timerRunning ? 'Tạm dừng' : 'Bắt đầu'}</span>
+                <span>{timerRunning ? t('referee.pause') : t('referee.start')}</span>
               </button>
 
               <button
                 onClick={resetTimer}
                 className="rounded-xl border border-slate-700 bg-slate-800 p-2 text-slate-400 hover:text-white"
-                title="Đặt lại đồng hồ về 00:00"
+                title={t('referee.reset')}
               >
                 <RotateCcw className="h-4 w-4" />
               </button>
@@ -556,7 +558,7 @@ export default function RefereePage() {
               className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-98 shadow"
             >
               <RotateCcw className="h-4 w-4 text-rose-400" />
-              <span>Instant Undo</span>
+              <span>{t('referee.instantUndo')}</span>
             </button>
 
             {/* Switch Court Side Button */}
@@ -565,7 +567,7 @@ export default function RefereePage() {
               className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-98 shadow"
             >
               <ArrowLeftRight className="h-4 w-4 text-sai-cyan" />
-              <span>Switch Court</span>
+              <span>{t('referee.switchCourt')}</span>
             </button>
 
             {/* End Set / End Match Button */}
@@ -574,7 +576,7 @@ export default function RefereePage() {
               className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-slate-950 hover:brightness-110 transition active:scale-98 shadow-lg shadow-emerald-500/20"
             >
               <CheckCircle className="h-4 w-4" />
-              <span>Finish Match</span>
+              <span>{t('referee.finishMatch')}</span>
             </button>
           </div>
 
@@ -642,8 +644,8 @@ export default function RefereePage() {
                 <Award className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Verify Match Completion</h3>
-                <p className="text-xs text-slate-400">Confirm winner for {activeMatch.matchCode}</p>
+                <h3 className="text-lg font-bold text-white">{t('referee.verifyTitle')}</h3>
+                <p className="text-xs text-slate-400">{t('referee.verifySubtitle')} {activeMatch.matchCode}</p>
               </div>
             </div>
 
@@ -651,7 +653,7 @@ export default function RefereePage() {
             <div className="flex items-center justify-between p-3 mb-4 rounded-2xl bg-slate-950/80 border border-slate-800">
               <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-sai-cyan" />
-                Thời lượng trận đấu (Duration):
+                {t('referee.verifyDuration')}
               </span>
               <span className="font-mono text-base font-black text-sai-yellow">
                 {formatTime(timerSeconds)}
@@ -659,7 +661,7 @@ export default function RefereePage() {
             </div>
 
             <p className="text-xs text-slate-300 mb-4">
-              Vui lòng xác minh tỉ số và chọn cặp vận động viên chiến thắng để lưu thời gian và phát trực tiếp kết quả:
+              {t('referee.verifyPrompt')}
             </p>
 
             <div className="grid grid-cols-2 gap-3 mb-6">
@@ -678,7 +680,7 @@ export default function RefereePage() {
                   {currentSet.teamAScore}
                 </div>
                 <div className="mt-2 text-[10px] font-black text-slate-400 uppercase tracking-wider group-hover:text-sai-cyan transition">
-                  Xác nhận Thắng
+                  {t('referee.confirmWinner')}
                 </div>
               </button>
 
@@ -697,7 +699,7 @@ export default function RefereePage() {
                   {currentSet.teamBScore}
                 </div>
                 <div className="mt-2 text-[10px] font-black text-slate-400 uppercase tracking-wider group-hover:text-sai-yellow transition">
-                  Xác nhận Thắng
+                  {t('referee.confirmWinner')}
                 </div>
               </button>
             </div>
@@ -707,7 +709,7 @@ export default function RefereePage() {
                 onClick={() => setShowEndMatchModal(false)}
                 className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white"
               >
-                Cancel
+                {t('referee.cancel')}
               </button>
             </div>
           </div>

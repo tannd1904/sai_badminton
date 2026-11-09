@@ -15,9 +15,11 @@ import {
   Trophy,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n';
 
 export default function HomePage() {
   const { isConnected, subscribeToScore, subscribeToMatchStatus } = useSocket();
+  const { t } = useLanguage();
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'XD' | 'MD'>('ALL');
@@ -109,14 +111,14 @@ export default function HomePage() {
             <div className="flex items-center gap-2 mb-2">
               <span className="flex h-2 w-2 rounded-full bg-sai-cyan animate-ping" />
               <span className="text-xs font-extrabold uppercase tracking-widest text-sai-cyan">
-                Live Broadcast Center
+                {t('home.broadcastCenter')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
-              SAI Badminton Championship 2024
+              {t('home.title')}
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-xl">
-              24 Players across 3 Pools competing in Mixed Doubles (XD) & Men&apos;s Doubles (MD) across Courts 1, 2 & 3.
+              {t('home.description')}
             </p>
           </div>
 
@@ -125,24 +127,24 @@ export default function HomePage() {
             <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 px-3.5 py-2">
               <Flame className="h-4 w-4 text-emerald-400 animate-pulse" />
               <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Live Playing</div>
-                <div className="text-sm font-black text-white">{inProgressCount} Matches</div>
+                <div className="text-[10px] uppercase font-bold text-slate-500">{t('home.metric.live')}</div>
+                <div className="text-sm font-black text-white">{inProgressCount} {t('home.matches')}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 px-3.5 py-2">
               <CheckCircle2 className="h-4 w-4 text-amber-400" />
               <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Completed</div>
-                <div className="text-sm font-black text-white">{completedCount} Matches</div>
+                <div className="text-[10px] uppercase font-bold text-slate-500">{t('home.metric.completed')}</div>
+                <div className="text-sm font-black text-white">{completedCount} {t('home.matches')}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 px-3.5 py-2">
               <Clock className="h-4 w-4 text-sai-cyan" />
               <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Upcoming</div>
-                <div className="text-sm font-black text-white">{scheduledCount} Matches</div>
+                <div className="text-[10px] uppercase font-bold text-slate-500">{t('home.metric.upcoming')}</div>
+                <div className="text-sm font-black text-white">{scheduledCount} {t('home.matches')}</div>
               </div>
             </div>
           </div>
@@ -154,7 +156,7 @@ export default function HomePage() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <Filter className="h-3.5 w-3.5 text-sai-cyan" />
-            Category:
+            {t('home.filter.category')}
           </span>
           <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
             {(['ALL', 'XD', 'MD'] as const).map((cat) => (
@@ -167,7 +169,7 @@ export default function HomePage() {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {cat === 'ALL' ? 'All Categories' : cat === 'XD' ? 'Mixed Doubles (XD)' : "Men's Doubles (MD)"}
+                {cat === 'ALL' ? t('home.filter.all') : cat === 'XD' ? t('home.filter.xd') : t('home.filter.md')}
               </button>
             ))}
           </div>
@@ -179,12 +181,12 @@ export default function HomePage() {
             className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-bold text-sai-yellow hover:bg-slate-800 transition"
           >
             <Trophy className="h-3.5 w-3.5" />
-            <span>View Standings & Brackets</span>
+            <span>{t('home.btn.viewStandings')}</span>
           </Link>
           <button
             onClick={() => fetchMatches()}
             className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white transition"
-            title="Refresh Scores"
+            title={t('home.btn.refresh')}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
