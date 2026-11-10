@@ -1,4 +1,4 @@
-import { Category, RulesMode } from '@prisma/client';
+import type { Category, RulesMode } from '@prisma/client';
 import { ConflictViolation } from '../types';
 
 interface MatchScheduleItem {
@@ -22,8 +22,8 @@ interface MatchScheduleItem {
 }
 
 // Estimated match durations: Single set = 12 mins, BO3 = 30 mins
-export function getEstimatedDurationMinutes(rulesMode: RulesMode): number {
-  return rulesMode === RulesMode.SINGLE_SET_10MIN ? 12 : 30;
+export function getEstimatedDurationMinutes(rulesMode: RulesMode | string): number {
+  return (rulesMode as string) === 'SINGLE_SET_10MIN' ? 12 : 30;
 }
 
 const REQUIRED_BUFFER_MINUTES = 10;

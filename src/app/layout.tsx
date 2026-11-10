@@ -7,6 +7,11 @@ import { AnnouncementBanner } from '../components/AnnouncementBanner';
 export const metadata: Metadata = {
   title: 'SAI Badminton Championship 2026 | Management System',
   description: 'Enterprise Badminton Tournament Live Scoring & Conflict-Free Schedule Management for SAI Digital',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

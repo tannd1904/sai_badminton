@@ -39,6 +39,41 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Updates must be an array' }, { status: 400 });
     }
 
+    // If ignoreConflicts is false, simulate updates first to detect collisions
+    if (!ignoreConflicts) {
+      const currentMatches = await prisma.match.findMany({
+        include: {
+          teamA: { include: { player1: true, player2: true } },
+          teamB: { include: { player1: true, player2: true } },
+          referee: true,
+          sets: true,
+        },
+      });
+
+      const simulated = currentMatches.map((m) => {
+        const up = updates.find((u) => u.id === m.id);
+        if (!up) return m;
+        return {
+          ...m,
+          ...(up.courtNumber !== undefined && { courtNumber: up.courtNumber }),
+          ...(up.startTime !== undefined && { startTime: new Date(up.startTime) }),
+          ...(up.orderIndex !== undefined && { orderIndex: up.orderIndex }),
+        };
+      });
+
+      const conflicts = checkScheduleConflicts(simulated as any);
+      if (conflicts.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Phát hiện ${conflicts.length} vi phạm quy tắc xếp lịch thi đấu!`,
+            conflicts,
+            requireConfirmation: true,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Apply updates in a transaction
     for (const item of updates) {
       await prisma.match.update({

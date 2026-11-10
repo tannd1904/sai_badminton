@@ -29,8 +29,7 @@ export async function POST(req: NextRequest) {
     const mdGroup = groupMatches.filter((m) => m.category === Category.MD);
     const playoffMatches = allMatches.filter((m) => m.roundType !== RoundType.GROUP);
 
-    const baseTime = new Date();
-    baseTime.setHours(9, 0, 0, 0);
+    const baseTime = new Date('2026-11-14T08:30:00+07:00');
 
     const slotDurationMs = 25 * 60 * 1000;
     let currentSlot = 0;

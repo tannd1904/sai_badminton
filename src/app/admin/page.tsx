@@ -23,8 +23,13 @@ import {
   Trophy,
   Search,
   Sliders,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
+  Filter,
 } from 'lucide-react';
 import { MatchData, ConflictViolation, TeamData, PlayerData } from '../../types';
+import { checkScheduleConflicts } from '../../lib/conflict-checker';
 
 export default function AdminPage() {
   const { data: session } = useSession();
@@ -41,6 +46,20 @@ export default function AdminPage() {
   // Court Configuration & Rebalancing state
   const [activeCourtsCount, setActiveCourtsCount] = useState<number>(3);
   const [isRebalancing, setIsRebalancing] = useState<boolean>(false);
+
+  // Schedule filtering, drag-and-drop & conflict modal states
+  const [courtFilter, setCourtFilter] = useState<'ALL' | 1 | 2 | 3>('ALL');
+  const [scheduleCategoryFilter, setScheduleCategoryFilter] = useState<'ALL' | 'XD' | 'MD'>('ALL');
+  const [scheduleRoundFilter, setScheduleRoundFilter] = useState<'ALL' | 'GROUP' | 'PLAYOFF'>('ALL');
+  const [scheduleSearchQuery, setScheduleSearchQuery] = useState<string>('');
+  const [draggedMatchId, setDraggedMatchId] = useState<string | null>(null);
+  const [dragOverMatchId, setDragOverMatchId] = useState<string | null>(null);
+  const [showConflictModal, setShowConflictModal] = useState<boolean>(false);
+  const [pendingConflictAction, setPendingConflictAction] = useState<{
+    description: string;
+    updates: Array<{ id: string; courtNumber?: number; startTime?: string; orderIndex?: number }>;
+    conflicts: ConflictViolation[];
+  } | null>(null);
 
   // Athlete Management states
   const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
@@ -137,42 +156,246 @@ export default function AdminPage() {
     setTimeout(() => setStatusMessage(null), 5000);
   };
 
-  // Reschedule match (change court or time)
-  const handleReschedule = async (matchId: string, courtNumber: number, minutesOffset: number) => {
-    const match = matches.find((m) => m.id === matchId);
-    if (!match) return;
+  // Helper to format ISO time to 'HH:mm' for input[type="time"]
+  const formatTimeForInput = (dateVal: string | Date | null | undefined): string => {
+    if (!dateVal) return '';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
 
-    const currentStart = match.startTime ? new Date(match.startTime) : new Date();
-    const newStart = new Date(currentStart.getTime() + minutesOffset * 60 * 1000);
+  // Helper to parse 'HH:mm' into ISO date on tournament date (14/11/2026)
+  const parseTimeToTournamentDate = (timeStr: string, existingDate?: string | Date | null): string => {
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return new Date().toISOString();
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    const d = existingDate ? new Date(existingDate) : new Date('2026-11-14T08:30:00+07:00');
+    d.setHours(hours, minutes, 0, 0);
+    return d.toISOString();
+  };
 
+  // Sorted and filtered matches: Chronological sorting (earliest startTime at the top)
+  const sortedAndFilteredMatches = React.useMemo(() => {
+    let list = [...matches];
+
+    // Filter by court
+    if (courtFilter !== 'ALL') {
+      list = list.filter((m) => m.courtNumber === courtFilter);
+    }
+
+    // Filter by category
+    if (scheduleCategoryFilter !== 'ALL') {
+      list = list.filter((m) => m.category === scheduleCategoryFilter);
+    }
+
+    // Filter by round
+    if (scheduleRoundFilter === 'GROUP') {
+      list = list.filter((m) => m.roundType === 'GROUP');
+    } else if (scheduleRoundFilter === 'PLAYOFF') {
+      list = list.filter((m) => m.roundType !== 'GROUP');
+    }
+
+    // Filter by search query
+    if (scheduleSearchQuery.trim()) {
+      const q = scheduleSearchQuery.toLowerCase().trim();
+      list = list.filter(
+        (m) =>
+          m.matchCode.toLowerCase().includes(q) ||
+          (m.teamA?.teamCode && m.teamA.teamCode.toLowerCase().includes(q)) ||
+          (m.teamB?.teamCode && m.teamB.teamCode.toLowerCase().includes(q)) ||
+          (m.teamA?.player1?.name && m.teamA.player1.name.toLowerCase().includes(q)) ||
+          (m.teamA?.player2?.name && m.teamA.player2.name.toLowerCase().includes(q)) ||
+          (m.teamB?.player1?.name && m.teamB.player1.name.toLowerCase().includes(q)) ||
+          (m.teamB?.player2?.name && m.teamB.player2.name.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort strictly chronologically: earliest startTime first, then court, then orderIndex
+    list.sort((a, b) => {
+      const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
+      const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
+      if (timeA !== timeB) return timeA - timeB;
+      if (a.courtNumber !== b.courtNumber) return a.courtNumber - b.courtNumber;
+      return (a.orderIndex ?? 0) - (b.orderIndex ?? 0);
+    });
+
+    return list;
+  }, [matches, courtFilter, scheduleCategoryFilter, scheduleRoundFilter, scheduleSearchQuery]);
+
+  // Apply updates to API
+  const applyScheduleUpdates = async (
+    updates: Array<{ id: string; courtNumber?: number; startTime?: string; orderIndex?: number }>,
+    ignoreConflicts: boolean = false
+  ) => {
     try {
       const res = await fetch('/api/schedule', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          updates: [
-            {
-              id: matchId,
-              courtNumber,
-              startTime: newStart.toISOString(),
-            },
-          ],
-        }),
+        body: JSON.stringify({ updates, ignoreConflicts }),
       });
 
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        setMatches(data.matches);
-        setConflicts(data.conflicts);
-        showNotification(
-          data.conflicts.length > 0
-            ? `⚠️ Rescheduled with ${data.conflicts.length} athlete conflict(s) detected!`
-            : '✅ Match rescheduled successfully! Schedule is 100% collision-free.'
-        );
+        setMatches(data.matches || []);
+        setConflicts(data.conflicts || []);
+        if (data.conflicts && data.conflicts.length > 0) {
+          showNotification(
+            `⚠️ Đã lưu lịch thi đấu (ghi nhận ${data.conflicts.length} cảnh báo xung đột từ BTC)`,
+            'success'
+          );
+        } else {
+          showNotification('✅ Đã cập nhật lịch thi đấu thành công! Không có xung đột.', 'success');
+        }
+        return true;
+      } else if (res.status === 409 && data.conflicts) {
+        setPendingConflictAction({
+          description: data.error || 'Cảnh báo xung đột lịch',
+          updates,
+          conflicts: data.conflicts,
+        });
+        setShowConflictModal(true);
+        return false;
+      } else {
+        showNotification(data.error || 'Lỗi khi cập nhật lịch thi đấu', 'error');
+        return false;
       }
     } catch (err: any) {
       showNotification(err.message, 'error');
+      return false;
     }
+  };
+
+  // Request schedule change with client-side simulation & verification
+  const requestScheduleChange = async (
+    updates: Array<{ id: string; courtNumber?: number; startTime?: string; orderIndex?: number }>,
+    description: string
+  ) => {
+    // Simulate on current matches
+    const simulated = matches.map((m) => {
+      const up = updates.find((u) => u.id === m.id);
+      if (!up) return m;
+      return {
+        ...m,
+        ...(up.courtNumber !== undefined ? { courtNumber: up.courtNumber } : {}),
+        ...(up.startTime !== undefined ? { startTime: up.startTime } : {}),
+        ...(up.orderIndex !== undefined ? { orderIndex: up.orderIndex } : {}),
+      };
+    });
+
+    const detectedConflicts = checkScheduleConflicts(simulated as any);
+    if (detectedConflicts.length > 0) {
+      setPendingConflictAction({
+        description,
+        updates,
+        conflicts: detectedConflicts,
+      });
+      setShowConflictModal(true);
+    } else {
+      await applyScheduleUpdates(updates, false);
+    }
+  };
+
+  // Swap matches (from drag & drop or move buttons)
+  const handleSwapMatches = async (idA: string, idB: string) => {
+    if (!idA || !idB || idA === idB) return;
+    const matchA = matches.find((m) => m.id === idA);
+    const matchB = matches.find((m) => m.id === idB);
+    if (!matchA || !matchB) return;
+
+    const timeA = matchA.startTime ? new Date(matchA.startTime).toISOString() : undefined;
+    const timeB = matchB.startTime ? new Date(matchB.startTime).toISOString() : undefined;
+
+    const updates = [
+      {
+        id: matchA.id,
+        startTime: timeB,
+        courtNumber: matchB.courtNumber,
+        orderIndex: matchB.orderIndex,
+      },
+      {
+        id: matchB.id,
+        startTime: timeA,
+        courtNumber: matchA.courtNumber,
+        orderIndex: matchA.orderIndex,
+      },
+    ];
+
+    await requestScheduleChange(
+      updates,
+      `Đổi vị trí & giờ đấu giữa trận ${matchA.matchCode} và ${matchB.matchCode}`
+    );
+  };
+
+  // Move step up or down in current list
+  const handleMoveStep = async (id: string, direction: -1 | 1) => {
+    const currentIndex = sortedAndFilteredMatches.findIndex((m) => m.id === id);
+    if (currentIndex < 0) return;
+    const targetIndex = currentIndex + direction;
+    if (targetIndex < 0 || targetIndex >= sortedAndFilteredMatches.length) return;
+
+    const targetMatch = sortedAndFilteredMatches[targetIndex];
+    await handleSwapMatches(id, targetMatch.id);
+  };
+
+  // Inline Court change
+  const handleCourtChange = async (matchId: string, courtNumber: number) => {
+    const match = matches.find((m) => m.id === matchId);
+    if (!match || match.courtNumber === courtNumber) return;
+
+    await requestScheduleChange(
+      [{ id: matchId, courtNumber }],
+      `Chuyển trận ${match.matchCode} sang Sân ${courtNumber}`
+    );
+  };
+
+  // Inline Time change
+  const handleTimeChange = async (matchId: string, timeStr: string) => {
+    const match = matches.find((m) => m.id === matchId);
+    if (!match || !timeStr) return;
+
+    const newIso = parseTimeToTournamentDate(timeStr, match.startTime);
+    await requestScheduleChange(
+      [{ id: matchId, startTime: newIso }],
+      `Đổi giờ trận ${match.matchCode} sang ${timeStr}`
+    );
+  };
+
+  // Quick offset minutes
+  const handleQuickOffset = async (matchId: string, offsetMinutes: number) => {
+    const match = matches.find((m) => m.id === matchId);
+    if (!match) return;
+
+    const cur = match.startTime ? new Date(match.startTime) : new Date('2026-11-14T08:30:00+07:00');
+    const newDate = new Date(cur.getTime() + offsetMinutes * 60 * 1000);
+    await requestScheduleChange(
+      [{ id: matchId, startTime: newDate.toISOString() }],
+      `Dịch giờ trận ${match.matchCode} ${offsetMinutes > 0 ? '+' : ''}${offsetMinutes} phút`
+    );
+  };
+
+  // Reschedule match alias for compatibility
+  const handleReschedule = async (matchId: string, courtNumber: number, minutesOffset: number) => {
+    if (minutesOffset !== 0) {
+      await handleQuickOffset(matchId, minutesOffset);
+    } else {
+      await handleCourtChange(matchId, courtNumber);
+    }
+  };
+
+  // Force Save confirmed by BTC/admin
+  const handleConfirmForceSave = async () => {
+    if (!pendingConflictAction) return;
+    await applyScheduleUpdates(pendingConflictAction.updates, true);
+    setShowConflictModal(false);
+    setPendingConflictAction(null);
+  };
+
+  const handleCancelConflictModal = () => {
+    setShowConflictModal(false);
+    setPendingConflictAction(null);
   };
 
   // Submit emergency score override
@@ -607,88 +830,361 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md">
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-3">
-              Court Schedule Table & Collision Verifier ({matches.length} Matches across {activeCourtsCount} Courts)
-            </h2>
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md space-y-4">
+            {/* Filter and Control Toolbar */}
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Court Filter Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Filter className="h-3.5 w-3.5 text-sai-cyan" />
+                    <span>Lọc Sân đấu:</span>
+                  </span>
+                  <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                    <button
+                      onClick={() => setCourtFilter('ALL')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        courtFilter === 'ALL'
+                          ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>Tất cả các sân</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                        courtFilter === 'ALL' ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {matches.length}
+                      </span>
+                    </button>
+
+                    {[1, 2, 3].map((c) => {
+                      const count = matches.filter((m) => m.courtNumber === c).length;
+                      return (
+                        <button
+                          key={c}
+                          onClick={() => setCourtFilter(c as any)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            courtFilter === c
+                              ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <span className={`h-2 w-2 rounded-full ${c === 1 ? 'bg-cyan-400' : c === 2 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                          <span>Sân {c}</span>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                            courtFilter === c ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right Info: Total and sorting note */}
+                <div className="text-xs text-slate-400 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-sai-yellow" />
+                  <span>Sắp xếp tự động: <strong className="text-white">Thời gian tăng dần (08:30 → 17:00)</strong></span>
+                </div>
+              </div>
+
+              {/* Row 2: Category, Round filter & Search */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Category Filter */}
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                    {(['ALL', 'XD', 'MD'] as const).map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setScheduleCategoryFilter(cat)}
+                        className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                          scheduleCategoryFilter === cat
+                            ? 'bg-slate-800 text-white shadow'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {cat === 'ALL' ? 'Tất cả ND' : cat === 'XD' ? 'Đôi Nam Nữ (XD)' : 'Đôi Nam (MD)'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Round Filter */}
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                    {(['ALL', 'GROUP', 'PLAYOFF'] as const).map((rnd) => (
+                      <button
+                        key={rnd}
+                        onClick={() => setScheduleRoundFilter(rnd)}
+                        className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                          scheduleRoundFilter === rnd
+                            ? 'bg-slate-800 text-white shadow'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {rnd === 'ALL' ? 'Tất cả vòng' : rnd === 'GROUP' ? 'Vòng Bảng' : 'Vòng Playoff'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Search Box */}
+                <div className="relative min-w-[240px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                  <input
+                    type="text"
+                    value={scheduleSearchQuery}
+                    onChange={(e) => setScheduleSearchQuery(e.target.value)}
+                    placeholder="Tìm mã trận, đội, tên VĐV..."
+                    className="w-full pl-9 pr-7 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sai-cyan"
+                  />
+                  {scheduleSearchQuery && (
+                    <button
+                      onClick={() => setScheduleSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Helpful Tips banner */}
+              <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sai-cyan font-bold">💡 Thao tác nhanh:</span>
+                  <span>Kéo thả hàng (hoặc bấm nút ▲ / ▼) để hoán đổi lịch. Có thể đổi trực tiếp Sân (Court 1, 2, 3) hoặc chỉnh giờ thi đấu. Nếu trùng lịch VĐV Pool 1, hệ thống sẽ hỏi xác nhận để bạn ép lưu theo ý muốn.</span>
+                </span>
+                <span className="shrink-0 font-bold text-slate-300">
+                  Hiển thị: <strong className="text-sai-cyan">{sortedAndFilteredMatches.length}</strong> / {matches.length} trận
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive Schedule Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
-                    <th className="py-2.5 px-3">Match</th>
-                    <th className="py-2.5 px-3">Court</th>
-                    <th className="py-2.5 px-3">Category</th>
-                    <th className="py-2.5 px-3">Start Time</th>
-                    <th className="py-2.5 px-3">Team A (Roster)</th>
-                    <th className="py-2.5 px-3">Team B (Roster)</th>
-                    <th className="py-2.5 px-3">Pool 1 Athletes</th>
-                    <th className="py-2.5 px-3 text-right">Actions</th>
+                    <th className="py-2.5 px-2.5 w-16 text-center">STT / Xếp</th>
+                    <th className="py-2.5 px-3">Mã trận</th>
+                    <th className="py-2.5 px-3">Sân đấu</th>
+                    <th className="py-2.5 px-3">Giờ thi đấu</th>
+                    <th className="py-2.5 px-3">Nội dung</th>
+                    <th className="py-2.5 px-3">Đội A (Roster)</th>
+                    <th className="py-2.5 px-3">Đội B (Roster)</th>
+                    <th className="py-2.5 px-3">VĐV Pool 1</th>
+                    <th className="py-2.5 px-3">Trạng thái</th>
+                    <th className="py-2.5 px-3 text-right">Dịch giờ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-medium">
-                  {matches.map((m) => {
+                  {sortedAndFilteredMatches.map((m, idx) => {
                     const pool1A = m.teamA?.player1?.pool === 1 ? m.teamA.player1.name : null;
                     const pool1B = m.teamB?.player1?.pool === 1 ? m.teamB.player1.name : null;
                     const hasConflict = conflicts.some(
                       (c) => c.matchA.id === m.id || c.matchB.id === m.id
                     );
+                    const isDragging = draggedMatchId === m.id;
+                    const isDragOver = dragOverMatchId === m.id;
 
                     return (
                       <tr
                         key={m.id}
-                        className={`transition ${
-                          hasConflict ? 'bg-rose-950/30 text-rose-200' : 'hover:bg-slate-800/40'
+                        draggable={true}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', m.id);
+                          setDraggedMatchId(m.id);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          if (dragOverMatchId !== m.id) setDragOverMatchId(m.id);
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverMatchId === m.id) setDragOverMatchId(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOverMatchId(null);
+                          const sourceId = e.dataTransfer.getData('text/plain') || draggedMatchId;
+                          if (sourceId && sourceId !== m.id) {
+                            handleSwapMatches(sourceId, m.id);
+                          }
+                          setDraggedMatchId(null);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedMatchId(null);
+                          setDragOverMatchId(null);
+                        }}
+                        className={`transition-all duration-150 ${
+                          isDragging
+                            ? 'opacity-30 border-2 border-dashed border-cyan-400 bg-slate-900/60'
+                            : isDragOver
+                            ? 'border-t-2 border-cyan-400 bg-cyan-950/40 shadow-lg scale-[1.005]'
+                            : hasConflict
+                            ? 'bg-rose-950/35 border-l-4 border-rose-500 text-rose-100 hover:bg-rose-950/50'
+                            : 'hover:bg-slate-800/40'
                         }`}
                       >
-                        <td className="py-2.5 px-3 font-mono font-bold text-white">{m.matchCode}</td>
+                        {/* 1. STT / Reorder Controls */}
+                        <td className="py-2.5 px-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <span
+                              title="Kéo thả hàng để hoán đổi thứ tự"
+                              className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-sai-cyan p-0.5"
+                            >
+                              <GripVertical className="h-3.5 w-3.5" />
+                            </span>
+                            <div className="flex flex-col">
+                              <button
+                                onClick={() => handleMoveStep(m.id, -1)}
+                                disabled={idx === 0}
+                                title="Đẩy trận lên sớm hơn"
+                                className="p-0.5 hover:bg-slate-800 rounded disabled:opacity-20 text-slate-400 hover:text-sai-cyan"
+                              >
+                                <ArrowUp className="h-2.5 w-2.5" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveStep(m.id, 1)}
+                                disabled={idx === sortedAndFilteredMatches.length - 1}
+                                title="Đẩy trận xuống muộn hơn"
+                                className="p-0.5 hover:bg-slate-800 rounded disabled:opacity-20 text-slate-400 hover:text-sai-cyan"
+                              >
+                                <ArrowDown className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                            <span className="font-mono text-[10px] text-slate-500 font-bold ml-0.5">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 2. Match Code & Round */}
+                        <td className="py-2.5 px-3">
+                          <div className="flex flex-col">
+                            <span className="font-mono font-black text-white text-xs flex items-center gap-1">
+                              {m.matchCode}
+                              {hasConflict && (
+                                <span title="Có xung đột lịch VĐV!">
+                                  <AlertTriangle className="h-3.5 w-3.5 text-rose-400 inline" />
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {m.roundType === 'GROUP' ? 'Vòng Bảng' : m.roundType === 'SEMI' ? 'Bán Kết' : m.roundType === 'BRONZE' ? 'Tranh Hạng 3' : 'Chung Kết'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 3. Court Selection (Court 1, 2, or 3) */}
                         <td className="py-2.5 px-3">
                           <select
                             value={m.courtNumber}
-                            onChange={(e) => handleReschedule(m.id, parseInt(e.target.value), 0)}
-                            className="rounded-lg bg-slate-950 border border-slate-800 px-2 py-1 text-xs text-sai-cyan font-bold"
+                            onChange={(e) => handleCourtChange(m.id, parseInt(e.target.value))}
+                            className={`rounded-lg bg-slate-950 border px-2 py-1 text-xs font-bold transition focus:outline-none focus:ring-1 focus:ring-cyan-500 ${
+                              m.courtNumber === 1
+                                ? 'text-cyan-300 border-cyan-800/60'
+                                : m.courtNumber === 2
+                                ? 'text-amber-300 border-amber-800/60'
+                                : 'text-emerald-300 border-emerald-800/60'
+                            }`}
                           >
-                            <option value={1}>Court 1</option>
-                            <option value={2}>Court 2</option>
-                            <option value={3}>Court 3</option>
+                            <option value={1}>Sân 1 (Court 1)</option>
+                            <option value={2}>Sân 2 (Court 2)</option>
+                            <option value={3}>Sân 3 (Court 3)</option>
                           </select>
                         </td>
-                        <td className="py-2.5 px-3 font-bold">{m.category}</td>
-                        <td className="py-2.5 px-3 font-mono text-slate-400">
-                          {m.startTime
-                            ? new Date(m.startTime).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : 'TBD'}
+
+                        {/* 4. Start Time (Inline editable) */}
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="time"
+                              value={formatTimeForInput(m.startTime)}
+                              onChange={(e) => handleTimeChange(m.id, e.target.value)}
+                              className="rounded-lg bg-slate-950 border border-slate-700 px-2 py-1 text-xs font-mono text-white focus:outline-none focus:border-sai-cyan"
+                              title="Click để sửa giờ thi đấu chính xác"
+                            />
+                          </div>
                         </td>
+
+                        {/* 5. Category */}
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                              m.category === 'XD'
+                                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
+                                : 'bg-amber-950 text-amber-300 border border-amber-800/60'
+                            }`}
+                          >
+                            {m.category === 'XD' ? 'Đôi Nữ Nữ / XD' : 'Đôi Nam / MD'}
+                          </span>
+                        </td>
+
+                        {/* 6. Team A (Roster) */}
                         <td className="py-2.5 px-3">
                           <div className="font-bold text-white">{m.teamA?.teamCode || 'Chưa XĐ'}</div>
-                          <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                            {m.teamA ? `${m.teamA.player1.name} & ${m.teamA.player2.name}` : 'Chưa xác định'}
+                          <div className="text-[10px] text-slate-400 truncate max-w-[130px]">
+                            {m.teamA ? `${m.teamA.player1.name} & ${m.teamA.player2.name}` : 'Chờ kết quả BXH'}
                           </div>
                         </td>
+
+                        {/* 7. Team B (Roster) */}
                         <td className="py-2.5 px-3">
                           <div className="font-bold text-white">{m.teamB?.teamCode || 'Chưa XĐ'}</div>
-                          <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                            {m.teamB ? `${m.teamB.player1.name} & ${m.teamB.player2.name}` : 'Chưa xác định'}
+                          <div className="text-[10px] text-slate-400 truncate max-w-[130px]">
+                            {m.teamB ? `${m.teamB.player1.name} & ${m.teamB.player2.name}` : 'Chờ kết quả BXH'}
                           </div>
                         </td>
+
+                        {/* 8. Pool 1 Athletes */}
                         <td className="py-2.5 px-3 font-mono text-[11px] text-sai-yellow">
                           {[pool1A, pool1B].filter(Boolean).join(', ') || '-'}
                         </td>
+
+                        {/* 9. Match Status */}
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                              m.status === 'COMPLETED'
+                                ? 'bg-slate-800 text-slate-300'
+                                : m.status === 'IN_PROGRESS'
+                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50 animate-pulse'
+                                : 'bg-slate-900 text-slate-400'
+                            }`}
+                          >
+                            {m.status === 'COMPLETED' ? 'Đã xong' : m.status === 'IN_PROGRESS' ? 'Đang đấu' : 'Chờ đấu'}
+                          </span>
+                        </td>
+
+                        {/* 10. Actions (Quick Offset) */}
                         <td className="py-2.5 px-3 text-right">
                           <div className="inline-flex gap-1">
                             <button
-                              onClick={() => handleReschedule(m.id, m.courtNumber, -15)}
-                              className="px-2 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white"
-                              title="Shift earlier by 15 mins"
+                              onClick={() => handleQuickOffset(m.id, -10)}
+                              className="px-1.5 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white hover:bg-slate-700"
+                              title="Dịch sớm lại 10 phút"
+                            >
+                              -10m
+                            </button>
+                            <button
+                              onClick={() => handleQuickOffset(m.id, 10)}
+                              className="px-1.5 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white hover:bg-slate-700"
+                              title="Dịch muộn đi 10 phút"
+                            >
+                              +10m
+                            </button>
+                            <button
+                              onClick={() => handleQuickOffset(m.id, -15)}
+                              className="px-1.5 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white hover:bg-slate-700"
+                              title="Dịch sớm lại 15 phút"
                             >
                               -15m
                             </button>
                             <button
-                              onClick={() => handleReschedule(m.id, m.courtNumber, 15)}
-                              className="px-2 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white"
-                              title="Shift later by 15 mins"
+                              onClick={() => handleQuickOffset(m.id, 15)}
+                              className="px-1.5 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white hover:bg-slate-700"
+                              title="Dịch muộn đi 15 phút"
                             >
                               +15m
                             </button>
@@ -697,6 +1193,13 @@ export default function AdminPage() {
                       </tr>
                     );
                   })}
+                  {sortedAndFilteredMatches.length === 0 && (
+                    <tr>
+                      <td colSpan={10} className="py-8 text-center text-slate-500 text-xs">
+                        Không tìm thấy trận đấu nào phù hợp với bộ lọc hiện tại.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1344,6 +1847,84 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* FORCE SAVE / CONFLICT OVERRIDE CONFIRMATION MODAL */}
+      {showConflictModal && pendingConflictAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl rounded-3xl border-2 border-rose-500/80 bg-slate-900 p-6 shadow-2xl shadow-rose-950/50">
+            {/* Modal Header */}
+            <div className="flex items-start gap-4 mb-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/50">
+                <AlertTriangle className="h-7 w-7 text-rose-400 animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-black text-rose-200 uppercase tracking-wide">
+                  Cảnh Báo Xung Đột Lịch Thi Đấu ({pendingConflictAction.conflicts.length} vi phạm)
+                </h3>
+                <p className="text-xs text-slate-300 mt-1">
+                  Thao tác: <span className="font-bold text-white">{pendingConflictAction.description}</span>
+                </p>
+              </div>
+              <button
+                onClick={handleCancelConflictModal}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* List of Detected Violations */}
+            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1 my-4">
+              {pendingConflictAction.conflicts.map((c, idx) => (
+                <div key={idx} className="p-3 rounded-2xl bg-rose-950/40 border border-rose-800/80 text-xs">
+                  <div className="flex items-center justify-between font-bold text-rose-300 mb-1">
+                    <span className="flex items-center gap-1.5">
+                      <span>👤 VĐV Pool 1: <strong className="text-white underline">{c.playerName}</strong></span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-900 text-rose-100">
+                      {c.type === 'SIMULTANEOUS_MATCH' ? 'Trùng giờ cùng lúc' : 'Nghỉ < 10 phút'}
+                    </span>
+                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    {c.message}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Rules Note */}
+            <div className="rounded-2xl bg-amber-950/30 border border-amber-800/60 p-3.5 text-[11px] text-amber-200 mb-6">
+              <div className="font-bold text-amber-300 mb-1 flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-sai-yellow" />
+                <span>Quy tắc bảo vệ thể lực VĐV (Collision Prevention Engine):</span>
+              </div>
+              Vận động viên Nhóm 1 (Pool 1) thi đấu cả 2 nội dung Đôi Nam Nữ & Đôi Nam không được phép thi đấu trên 2 sân cùng một thời điểm và cần tối thiểu <strong>10 phút nghỉ ngơi</strong> giữa 2 trận liên tiếp.
+              <div className="mt-2 text-slate-300">
+                Nếu BTC/Admin đã tính toán thực tế tại sân (ví dụ trận trước kết thúc sớm hơn dự kiến, hoặc VĐV đồng ý đánh tiếp để giải chạy nhanh) và <strong>chắc chắn muốn sắp xếp cứng (Hard Schedule)</strong>, hãy nhấn <em>"Đồng ý ép lưu"</em>.
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={handleCancelConflictModal}
+                className="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition"
+              >
+                Hủy bỏ & Giữ nguyên lịch cũ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmForceSave}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-rose-500 to-amber-600 text-xs font-black text-white shadow-lg shadow-rose-950/60 hover:brightness-110 active:scale-95 transition"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                <span>Đồng ý ép lưu (Force Save)</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

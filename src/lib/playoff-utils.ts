@@ -50,3 +50,4 @@ export function getPlayoffSlotInfo(matchCode: string, slot: 'A' | 'B', locale: s
 
   return { label: undetermined, note: '', fullTitle: undetermined };
 }
+
