@@ -333,17 +333,17 @@ async function main() {
   // Each match takes 10 mins. If slot is 20 mins, even back-to-back adjacent slots have 10 mins gap!
   // But to be even safer, no player is assigned in consecutive slots!
   const groupSchedule: ScheduledMatch[] = [
-    // Slot 0 (09:00) - XD Group A
-    { matchCode: 'M-XD-01', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD4', teamBCode: 'XD2', slot: 0, status: MatchStatus.COMPLETED, rulesMode: RulesMode.SINGLE_SET_10MIN, scores: [{ a: 21, b: 18 }], winnerTeamCode: 'XD4' },
-    { matchCode: 'M-XD-02', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'XD6', teamBCode: 'XD8', slot: 0, status: MatchStatus.COMPLETED, rulesMode: RulesMode.SINGLE_SET_10MIN, scores: [{ a: 19, b: 21 }], winnerTeamCode: 'XD8' },
+    // Slot 0 (08:30) - XD Group A
+    { matchCode: 'M-XD-01', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD4', teamBCode: 'XD2', slot: 0, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
+    { matchCode: 'M-XD-02', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'XD6', teamBCode: 'XD8', slot: 0, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
 
-    // Slot 1 (09:25) - XD Group B
-    { matchCode: 'M-XD-03', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD3', teamBCode: 'XD5', slot: 1, status: MatchStatus.COMPLETED, rulesMode: RulesMode.SINGLE_SET_10MIN, scores: [{ a: 21, b: 17 }], winnerTeamCode: 'XD3' },
-    { matchCode: 'M-XD-04', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'XD1', teamBCode: 'XD7', slot: 1, status: MatchStatus.COMPLETED, rulesMode: RulesMode.SINGLE_SET_10MIN, scores: [{ a: 21, b: 16 }], winnerTeamCode: 'XD1' },
+    // Slot 1 (08:55) - XD Group B
+    { matchCode: 'M-XD-03', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD3', teamBCode: 'XD5', slot: 1, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
+    { matchCode: 'M-XD-04', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'XD1', teamBCode: 'XD7', slot: 1, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
 
-    // Slot 2 (09:50) - XD Group A
-    { matchCode: 'M-XD-05', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD4', teamBCode: 'XD6', slot: 2, status: MatchStatus.IN_PROGRESS, rulesMode: RulesMode.SINGLE_SET_10MIN, scores: [{ a: 16, b: 14 }] },
-    { matchCode: 'M-XD-06', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'XD2', teamBCode: 'XD8', slot: 2, status: MatchStatus.IN_PROGRESS, rulesMode: RulesMode.SINGLE_SET_10MIN, scores: [{ a: 18, b: 18 }] },
+    // Slot 2 (09:20) - XD Group A
+    { matchCode: 'M-XD-05', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD4', teamBCode: 'XD6', slot: 2, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
+    { matchCode: 'M-XD-06', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'XD2', teamBCode: 'XD8', slot: 2, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
 
     // Slot 3 (10:15) - XD Group B
     { matchCode: 'M-XD-07', category: Category.XD, roundType: RoundType.GROUP, courtNumber: 1, teamACode: 'XD3', teamBCode: 'XD1', slot: 3, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
@@ -382,9 +382,8 @@ async function main() {
     { matchCode: 'M-MD-12', category: Category.MD, roundType: RoundType.GROUP, courtNumber: 2, teamACode: 'MD4', teamBCode: 'MD6', slot: 11, status: MatchStatus.SCHEDULED, rulesMode: RulesMode.SINGLE_SET_10MIN },
   ];
 
-  // Base tournament start time: 9:00 AM today
-  const baseTime = new Date();
-  baseTime.setHours(9, 0, 0, 0);
+  // Base tournament start time: 8:30 AM, 14/11/2026
+  const baseTime = new Date('2026-11-14T08:30:00+07:00');
 
   const referees = [ref1, ref2, ref3];
 
@@ -394,13 +393,7 @@ async function main() {
     const teamB = m.category === Category.XD ? xdTeams[m.teamBCode] : mdTeams[m.teamBCode];
 
     const matchStart = new Date(baseTime.getTime() + m.slot * 25 * 60 * 1000);
-    const matchEnd = new Date(matchStart.getTime() + 10 * 60 * 1000);
     const referee = referees[(m.courtNumber - 1) % 3];
-
-    let winnerTeamId: string | null = null;
-    if (m.winnerTeamCode) {
-      winnerTeamId = m.category === Category.XD ? xdTeams[m.winnerTeamCode].id : mdTeams[m.winnerTeamCode].id;
-    }
 
     const createdMatch = await prisma.match.create({
       data: {
@@ -411,57 +404,27 @@ async function main() {
         refereeId: referee.id,
         teamAId: teamA.id,
         teamBId: teamB.id,
-        status: m.status,
+        status: MatchStatus.SCHEDULED,
         rulesMode: m.rulesMode,
-        winnerTeamId,
+        winnerTeamId: null,
         startTime: matchStart,
-        endTime: m.status === MatchStatus.COMPLETED ? matchEnd : null,
+        endTime: null,
         orderIndex: orderCounter++,
-        timerRemainingSeconds: m.status === MatchStatus.IN_PROGRESS ? 345 : 600,
-        timerIsRunning: m.status === MatchStatus.IN_PROGRESS,
+        timerRemainingSeconds: 600,
+        timerIsRunning: false,
       },
     });
 
-    // Create match set
-    if (m.scores && m.scores.length > 0) {
-      for (let s = 0; s < m.scores.length; s++) {
-        await prisma.matchSet.create({
-          data: {
-            matchId: createdMatch.id,
-            setNumber: s + 1,
-            teamAScore: m.scores[s].a,
-            teamBScore: m.scores[s].b,
-            isFinished: m.status === MatchStatus.COMPLETED,
-          },
-        });
-      }
-    } else {
-      await prisma.matchSet.create({
-        data: {
-          matchId: createdMatch.id,
-          setNumber: 1,
-          teamAScore: 0,
-          teamBScore: 0,
-          isFinished: false,
-        },
-      });
-    }
-
-    // If completed or in progress, create some audit log entries
-    if (m.status === MatchStatus.COMPLETED || m.status === MatchStatus.IN_PROGRESS) {
-      const sA = m.scores?.[0]?.a || 0;
-      const sB = m.scores?.[0]?.b || 0;
-      await prisma.scoreAuditLog.create({
-        data: {
-          matchId: createdMatch.id,
-          setNumber: 1,
-          actionType: 'ADD_POINT',
-          scoreSnapshotA: sA,
-          scoreSnapshotB: sB,
-          timestamp: new Date(matchStart.getTime() + 5 * 60 * 1000),
-        },
-      });
-    }
+    // Create match set (initial 0-0)
+    await prisma.matchSet.create({
+      data: {
+        matchId: createdMatch.id,
+        setNumber: 1,
+        teamAScore: 0,
+        teamBScore: 0,
+        isFinished: false,
+      },
+    });
   }
 
   console.log('--- Generating Playoff Matches (8 BO3 matches) ---');

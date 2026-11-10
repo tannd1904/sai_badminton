@@ -1,6 +1,9 @@
-# SAI Badminton Championship Management System (SAI-BCS) 🏸
+# SAI Badminton Championship 2026 🏸
 
-A production-ready, full-stack tournament management system designed and engineered for **SAI Digital**. Features ultra-low latency live scoring (<100ms), conflict-free scheduling engine for dual-category athletes, mobile-first referee scoreboard with Web Audio buzzer, and real-time spectator dashboards with dynamic knockout brackets.
+**Designed & Developed by TanND** for **SAI Digital**.
+Opening date: **November 14, 2026 (14/11/2026)**.
+
+A production-ready, full-stack tournament management system. Features ultra-low latency live scoring (<100ms), conflict-free scheduling engine for dual-category athletes, mobile-first referee scoreboard with Web Audio buzzer, and real-time spectator dashboards with dynamic knockout brackets.
 
 ---
 

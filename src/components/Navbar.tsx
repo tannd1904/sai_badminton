@@ -65,8 +65,8 @@ export function Navbar() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold tracking-wider text-white text-lg">SAI DIGITAL</span>
-                <span className="rounded bg-sai-yellow/20 px-1.5 py-0.5 text-[10px] font-bold text-sai-yellow uppercase">
-                  BCS 2024
+                <span className="rounded bg-sai-cyan/20 px-2 py-0.5 text-[10px] font-bold text-sai-cyan uppercase">
+                  2026
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">{t('nav.subTitle')}</p>

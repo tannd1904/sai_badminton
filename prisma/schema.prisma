@@ -1,4 +1,4 @@
-// Prisma Schema for SAI Badminton Championship Management System (SAI-BCS)
+// Prisma Schema for SAI Badminton Championship 2026
 
 generator client {
   provider = "prisma-client-js"

@@ -23,8 +23,8 @@ export const translations = {
 
     // Home / Live Courts
     'home.broadcastCenter': 'TRUNG TÂM PHÁT SÓNG TRỰC TIẾP',
-    'home.title': 'Giải Cầu Lông SAI Badminton Championship 2024',
-    'home.description': '24 Vận động viên thuộc 3 Nhóm (Pool 1, 2 & 3) tranh tài ở 2 nội dung Đôi Nam Nữ (XD) và Đôi Nam (MD) trên các sân thi đấu.',
+    'home.title': 'Giải Cầu Lông SAI Badminton Championship 2026',
+    'home.description': 'Khai mạc ngày 14/11/2026. 24 Vận động viên thuộc 3 Nhóm (Pool 1, 2 & 3) tranh tài ở 2 nội dung Đôi Nam Nữ (XD) và Đôi Nam (MD).',
     'home.metric.live': 'Đang thi đấu',
     'home.metric.completed': 'Đã kết thúc',
     'home.metric.upcoming': 'Sắp diễn ra',
@@ -175,8 +175,8 @@ export const translations = {
 
     // Home / Live Courts
     'home.broadcastCenter': 'LIVE BROADCAST CENTER',
-    'home.title': 'SAI Badminton Championship 2024',
-    'home.description': '24 Players across 3 Pools competing in Mixed Doubles (XD) & Men\'s Doubles (MD) across Courts 1, 2 & 3.',
+    'home.title': 'SAI Badminton Championship 2026',
+    'home.description': 'Opening on 14/11/2026. 24 Players across 3 Pools competing in Mixed Doubles (XD) & Men\'s Doubles (MD).',
     'home.metric.live': 'Live Playing',
     'home.metric.completed': 'Completed',
     'home.metric.upcoming': 'Upcoming',

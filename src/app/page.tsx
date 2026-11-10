@@ -108,10 +108,13 @@ export default function HomePage() {
       <div className="relative mb-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-r from-sai-navy-950 via-slate-900 to-sai-navy-900 p-6 sm:p-8 shadow-2xl">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="flex h-2 w-2 rounded-full bg-sai-cyan animate-ping" />
               <span className="text-xs font-extrabold uppercase tracking-widest text-sai-cyan">
                 {t('home.broadcastCenter')}
+              </span>
+              <span className="rounded-full bg-sai-cyan/10 border border-sai-cyan/30 px-2.5 py-0.5 text-[11px] font-bold text-sai-cyan">
+                📅 14/11/2026
               </span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
