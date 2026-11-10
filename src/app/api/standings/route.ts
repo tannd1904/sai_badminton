@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       const h2hMap = new Map<string, string>();
 
       for (const m of groupMatches) {
-        if (m.category !== cat) continue;
+        if (m.category !== cat || !m.teamAId || !m.teamBId) continue;
         const entryA = teamMap.get(m.teamAId);
         const entryB = teamMap.get(m.teamBId);
         if (!entryA || !entryB) continue;

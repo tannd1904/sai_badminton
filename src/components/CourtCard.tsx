@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MatchData } from '../types';
 import { Clock, Shield, Users, Trophy } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
+import { getPlayoffSlotInfo } from '../lib/playoff-utils';
 
 interface CourtCardProps {
   courtNumber: number;
@@ -122,19 +123,30 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
                 }`}
               >
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <div className="text-sm sm:text-base font-black text-white leading-tight">
-                    <div>{teamLeft?.player1.name}</div>
-                    <div className="text-slate-300 font-bold">{teamLeft?.player2.name}</div>
-                  </div>
-                  {winnerId === teamLeft?.id && (
+                  {teamLeft ? (
+                    <div className="text-sm sm:text-base font-black text-white leading-tight">
+                      <div>{teamLeft.player1.name}</div>
+                      <div className="text-slate-300 font-bold">{teamLeft.player2.name}</div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-bold">
+                      <div>Chưa xác định</div>
+                      <div className="text-[10px] text-sai-cyan mt-0.5">
+                        {getPlayoffSlotInfo(activeMatch.matchCode, isSwitched ? 'B' : 'A', locale).note}
+                      </div>
+                    </div>
+                  )}
+                  {winnerId && winnerId === teamLeft?.id && (
                     <Trophy className="h-4 w-4 text-sai-yellow shrink-0 ml-1" />
                   )}
                 </div>
-                <div className="mt-1.5 flex items-center justify-center">
-                  <span className="rounded bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
-                    {teamLeft?.teamCode}
-                  </span>
-                </div>
+                {teamLeft?.teamCode && (
+                  <div className="mt-1.5 flex items-center justify-center">
+                    <span className="rounded bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
+                      {teamLeft.teamCode}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -172,19 +184,30 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
                 }`}
               >
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <div className="text-sm sm:text-base font-black text-white leading-tight">
-                    <div>{teamRight?.player1.name}</div>
-                    <div className="text-slate-300 font-bold">{teamRight?.player2.name}</div>
-                  </div>
+                  {teamRight ? (
+                    <div className="text-sm sm:text-base font-black text-white leading-tight">
+                      <div>{teamRight.player1.name}</div>
+                      <div className="text-slate-300 font-bold">{teamRight.player2.name}</div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-bold">
+                      <div>Chưa xác định</div>
+                      <div className="text-[10px] text-sai-yellow mt-0.5">
+                        {getPlayoffSlotInfo(activeMatch.matchCode, isSwitched ? 'A' : 'B', locale).note}
+                      </div>
+                    </div>
+                  )}
                   {winnerId === teamRight?.id && (
                     <Trophy className="h-4 w-4 text-sai-yellow shrink-0 ml-1" />
                   )}
                 </div>
-                <div className="mt-1.5 flex items-center justify-center">
-                  <span className="rounded bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-yellow">
-                    {teamRight?.teamCode}
-                  </span>
-                </div>
+                {teamRight?.teamCode && (
+                  <div className="mt-1.5 flex items-center justify-center">
+                    <span className="rounded bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[10px] font-mono font-bold text-sai-yellow">
+                      {teamRight.teamCode}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -242,10 +265,10 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
           <div className="grid grid-cols-5 items-center gap-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs">
             <div className="col-span-2 text-left truncate">
               <span className="font-black text-white block truncate leading-tight">
-                {nextMatch.teamA.player1.name} & {nextMatch.teamA.player2.name}
+                {nextMatch.teamA ? `${nextMatch.teamA.player1.name} & ${nextMatch.teamA.player2.name}` : 'Chưa xác định'}
               </span>
               <span className="inline-block mt-0.5 text-[10px] font-mono font-bold text-sai-cyan">
-                {nextMatch.teamA.teamCode}
+                {nextMatch.teamA?.teamCode || getPlayoffSlotInfo(nextMatch.matchCode, 'A', locale).note}
               </span>
             </div>
 
@@ -257,10 +280,10 @@ export function CourtCard({ courtNumber, activeMatch, nextMatch }: CourtCardProp
 
             <div className="col-span-2 text-right truncate">
               <span className="font-black text-white block truncate leading-tight">
-                {nextMatch.teamB.player1.name} & {nextMatch.teamB.player2.name}
+                {nextMatch.teamB ? `${nextMatch.teamB.player1.name} & ${nextMatch.teamB.player2.name}` : 'Chưa xác định'}
               </span>
               <span className="inline-block mt-0.5 text-[10px] font-mono font-bold text-sai-yellow">
-                {nextMatch.teamB.teamCode}
+                {nextMatch.teamB?.teamCode || getPlayoffSlotInfo(nextMatch.matchCode, 'B', locale).note}
               </span>
             </div>
           </div>

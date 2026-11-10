@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { publishEvent, CHANNELS } from '../../../../../lib/redis';
 import { RulesMode, MatchStatus, AuditActionType } from '@prisma/client';
+import { advancePlayoffsForCategory } from '../../../../../lib/playoffs';
 
 export async function POST(
   req: NextRequest,
@@ -251,6 +252,12 @@ export async function POST(
 
     // Low-latency broadcast via Redis Pub/Sub
     await publishEvent(CHANNELS.SCORE_UPDATE, payload);
+
+    if (updatedMatch.status === MatchStatus.COMPLETED) {
+      advancePlayoffsForCategory(updatedMatch.category).catch((err) =>
+        console.error('[Auto Playoff Sync Error]:', err)
+      );
+    }
 
     return NextResponse.json({
       success: true,

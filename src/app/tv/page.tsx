@@ -5,6 +5,7 @@ import { useSocket } from '../../lib/socket-client';
 import { MatchData } from '../../types';
 import { Maximize2, Minimize2, Tv, Clock, Trophy } from 'lucide-react';
 import { useLanguage } from '../../lib/i18n';
+import { getPlayoffSlotInfo } from '../../lib/playoff-utils';
 
 export default function TVScoreboardPage() {
   const { t, locale } = useLanguage();
@@ -154,22 +155,35 @@ export default function TVScoreboardPage() {
           {/* Left Team - Athlete Names Prominent */}
           <div className="col-span-3 text-center">
             <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl">
-              <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 leading-tight">
-                <div>{leftTeam.player1.name}</div>
-                <div className="text-slate-200">{leftTeam.player2.name}</div>
-              </h3>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-sai-cyan/20 border border-sai-cyan/40 px-3.5 py-1 text-sm font-mono font-black text-sai-cyan mt-1">
-                <span>{leftTeam.teamCode}</span>
-              </div>
+              {leftTeam ? (
+                <>
+                  <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 leading-tight">
+                    <div>{leftTeam.player1.name}</div>
+                    <div className="text-slate-200">{leftTeam.player2.name}</div>
+                  </h3>
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-sai-cyan/20 border border-sai-cyan/40 px-3.5 py-1 text-sm font-mono font-black text-sai-cyan mt-1">
+                    <span>{leftTeam.teamCode}</span>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-400 mb-2 leading-tight">
+                    Chưa xác định
+                  </h3>
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-sai-cyan/10 border border-sai-cyan/30 px-3 py-1 text-xs font-mono font-bold text-sai-cyan mt-1">
+                    <span>{getPlayoffSlotInfo(match.matchCode, isSwitched ? 'B' : 'A', locale).note}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Scores */}
           <div className="col-span-1 text-center">
             <div className="text-6xl sm:text-8xl font-black font-mono tracking-tight text-white flex items-center justify-center gap-2 drop-shadow-lg">
-              <span className="text-sai-cyan">{leftScore}</span>
+              <span className="text-sai-cyan">{leftTeam ? leftScore : '-'}</span>
               <span className="text-slate-600">:</span>
-              <span className="text-sai-yellow">{rightScore}</span>
+              <span className="text-sai-yellow">{rightTeam ? rightScore : '-'}</span>
             </div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2 block">
               {match.rulesMode === 'BO3' ? `Set ${currentSetNum} of 3` : 'Single Set Sudden-Death'}
@@ -179,13 +193,26 @@ export default function TVScoreboardPage() {
           {/* Right Team - Athlete Names Prominent */}
           <div className="col-span-3 text-center">
             <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl">
-              <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 leading-tight">
-                <div>{rightTeam.player1.name}</div>
-                <div className="text-slate-200">{rightTeam.player2.name}</div>
-              </h3>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-sai-yellow/20 border border-sai-yellow/40 px-3.5 py-1 text-sm font-mono font-black text-sai-yellow mt-1">
-                <span>{rightTeam.teamCode}</span>
-              </div>
+              {rightTeam ? (
+                <>
+                  <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 leading-tight">
+                    <div>{rightTeam.player1.name}</div>
+                    <div className="text-slate-200">{rightTeam.player2.name}</div>
+                  </h3>
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-sai-yellow/20 border border-sai-yellow/40 px-3.5 py-1 text-sm font-mono font-black text-sai-yellow mt-1">
+                    <span>{rightTeam.teamCode}</span>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-400 mb-2 leading-tight">
+                    Chưa xác định
+                  </h3>
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-sai-yellow/10 border border-sai-yellow/30 px-3 py-1 text-xs font-mono font-bold text-sai-yellow mt-1">
+                    <span>{getPlayoffSlotInfo(match.matchCode, isSwitched ? 'A' : 'B', locale).note}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

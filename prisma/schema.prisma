@@ -119,10 +119,10 @@ model Match {
   courtNumber         Int          @default(1) // 1, 2, 3
   refereeId           String?
   referee             User?        @relation("RefereeMatches", fields: [refereeId], references: [id], onDelete: SetNull)
-  teamAId             String
-  teamA               Team         @relation("TeamAMatches", fields: [teamAId], references: [id])
-  teamBId             String
-  teamB               Team         @relation("TeamBMatches", fields: [teamBId], references: [id])
+  teamAId             String?
+  teamA               Team?        @relation("TeamAMatches", fields: [teamAId], references: [id], onDelete: SetNull)
+  teamBId             String?
+  teamB               Team?        @relation("TeamBMatches", fields: [teamBId], references: [id], onDelete: SetNull)
   status              MatchStatus  @default(SCHEDULED)
   rulesMode           RulesMode    @default(SINGLE_SET_10MIN)
   winnerTeamId        String?

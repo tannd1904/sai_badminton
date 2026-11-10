@@ -16,10 +16,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '../lib/i18n';
+import { getPlayoffSlotInfo } from '../lib/playoff-utils';
 
 export default function HomePage() {
   const { isConnected, subscribeToScore, subscribeToMatchStatus } = useSocket();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'XD' | 'MD'>('ALL');
@@ -250,23 +251,51 @@ export default function HomePage() {
                     <td className="py-2.5 px-3 font-bold text-slate-300">{m.category}</td>
                     <td className="py-2.5 px-3 text-slate-400">{m.roundType}</td>
                     <td className="py-2.5 px-3 font-bold text-white">
-                      <div className="font-extrabold text-white text-xs">
-                        {m.teamA.player1.name} & {m.teamA.player2.name}
-                      </div>
-                      <span className="inline-block rounded bg-sai-cyan/20 border border-sai-cyan/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan mt-0.5">
-                        {m.teamA.teamCode}
-                      </span>
+                      {m.teamA ? (
+                        <div>
+                          <div className="font-extrabold text-white text-xs">
+                            {m.teamA.player1.name} & {m.teamA.player2.name}
+                          </div>
+                          <span className="inline-block rounded bg-sai-cyan/20 border border-sai-cyan/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan mt-0.5">
+                            {m.teamA.teamCode}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-bold text-slate-400 text-xs flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600" />
+                            <span>Chưa xác định</span>
+                          </div>
+                          <span className="inline-block text-[10px] font-mono text-sai-cyan mt-0.5">
+                            {getPlayoffSlotInfo(m.matchCode, 'A', locale).note}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-2.5 px-3 text-center font-mono font-bold text-sm text-sai-yellow">
-                      {s1 ? `${s1.teamAScore} - ${s1.teamBScore}` : '0 - 0'}
+                      {s1 && m.teamA && m.teamB ? `${s1.teamAScore} - ${s1.teamBScore}` : '--'}
                     </td>
                     <td className="py-2.5 px-3 font-bold text-white">
-                      <div className="font-extrabold text-white text-xs">
-                        {m.teamB.player1.name} & {m.teamB.player2.name}
-                      </div>
-                      <span className="inline-block rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-yellow mt-0.5">
-                        {m.teamB.teamCode}
-                      </span>
+                      {m.teamB ? (
+                        <div>
+                          <div className="font-extrabold text-white text-xs">
+                            {m.teamB.player1.name} & {m.teamB.player2.name}
+                          </div>
+                          <span className="inline-block rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-yellow mt-0.5">
+                            {m.teamB.teamCode}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-bold text-slate-400 text-xs flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600" />
+                            <span>Chưa xác định</span>
+                          </div>
+                          <span className="inline-block text-[10px] font-mono text-sai-yellow mt-0.5">
+                            {getPlayoffSlotInfo(m.matchCode, 'B', locale).note}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-2.5 px-3">
                       <span

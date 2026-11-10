@@ -48,11 +48,11 @@ export async function POST(req: NextRequest) {
           if (courtsUsedInSlot >= activeCourts) break;
           const candidate = remaining[i];
           const cAthletes = [
-            candidate.teamA.player1.id,
-            candidate.teamA.player2.id,
-            candidate.teamB.player1.id,
-            candidate.teamB.player2.id,
-          ];
+            candidate.teamA?.player1?.id,
+            candidate.teamA?.player2?.id,
+            candidate.teamB?.player1?.id,
+            candidate.teamB?.player2?.id,
+          ].filter(Boolean) as string[];
 
           const hasSlotCollision = cAthletes.some((id) => playersInSlot.has(id));
           if (!hasSlotCollision) {

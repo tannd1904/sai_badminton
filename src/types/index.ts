@@ -56,10 +56,10 @@ export interface MatchData {
     name: string;
     email: string;
   } | null;
-  teamAId: string;
-  teamA: TeamData;
-  teamBId: string;
-  teamB: TeamData;
+  teamAId?: string | null;
+  teamA?: TeamData | null;
+  teamBId?: string | null;
+  teamB?: TeamData | null;
   status: MatchStatus;
   rulesMode: RulesMode;
   winnerTeamId?: string | null;

@@ -9,16 +9,16 @@ interface MatchScheduleItem {
   rulesMode: RulesMode;
   startTime: Date | string | null;
   endTime?: Date | string | null;
-  teamA: {
+  teamA?: {
     teamCode: string;
     player1: { id: string; name: string; pool: number };
     player2: { id: string; name: string; pool: number };
-  };
-  teamB: {
+  } | null;
+  teamB?: {
     teamCode: string;
     player1: { id: string; name: string; pool: number };
     player2: { id: string; name: string; pool: number };
-  };
+  } | null;
 }
 
 // Estimated match durations: Single set = 12 mins, BO3 = 30 mins
@@ -56,10 +56,10 @@ export function checkScheduleConflicts(matches: MatchScheduleItem[]): ConflictVi
     const end = match.endTime ? new Date(match.endTime) : new Date(start.getTime() + duration * 60 * 1000);
 
     const athletes = [
-      match.teamA.player1,
-      match.teamA.player2,
-      match.teamB.player1,
-      match.teamB.player2,
+      match.teamA?.player1,
+      match.teamA?.player2,
+      match.teamB?.player1,
+      match.teamB?.player2,
     ];
 
     for (const athlete of athletes) {

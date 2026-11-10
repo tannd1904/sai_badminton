@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { publishEvent, CHANNELS } from '../../../../../lib/redis';
 import { MatchStatus } from '@prisma/client';
+import { advancePlayoffsForCategory } from '../../../../../lib/playoffs';
 
 export async function POST(
   req: NextRequest,
@@ -94,6 +95,12 @@ export async function POST(
       sets: updated.sets,
       overrideReason: reason,
     });
+
+    if (updated.status === MatchStatus.COMPLETED) {
+      advancePlayoffsForCategory(updated.category).catch((err) =>
+        console.error('[Auto Playoff Sync Override Error]:', err)
+      );
+    }
 
     return NextResponse.json({ success: true, match: updated });
   } catch (error: any) {

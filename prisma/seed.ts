@@ -427,33 +427,21 @@ async function main() {
     });
   }
 
-  console.log('--- Generating Playoff Matches (8 BO3 matches) ---');
+  console.log('--- Generating Playoff Matches (8 BO3 matches - Undetermined/TBD) ---');
   // Playoff Stage (8 matches: 4 Semis, 2 Bronze, 2 Finals)
-  // XD Playoff:
-  // XD Semi 1: A1 vs B2 (Placeholders XD4 vs XD5)
-  // XD Semi 2: B1 vs A2 (Placeholders XD3 vs XD2)
-  // XD Bronze: Loser SF1 vs Loser SF2
-  // XD Final: Winner SF1 vs Winner SF2
-  // MD Playoff:
-  // MD Semi 1: A1 vs B2 (MD5 vs MD4)
-  // MD Semi 2: B1 vs A2 (MD3 vs MD2)
-  // MD Bronze: Loser SF1 vs Loser SF2
-  // MD Final: Winner SF1 vs Winner SF2
-
+  // All initialized as TBD (teamAId: null, teamBId: null) until Group Stage completes.
   const playoffSchedule = [
-    { matchCode: 'M-XD-SF1', category: Category.XD, roundType: RoundType.SEMI, court: 1, teamA: 'XD4', teamB: 'XD5', slot: 9 },
-    { matchCode: 'M-XD-SF2', category: Category.XD, roundType: RoundType.SEMI, court: 2, teamA: 'XD3', teamB: 'XD2', slot: 9 },
-    { matchCode: 'M-MD-SF1', category: Category.MD, roundType: RoundType.SEMI, court: 1, teamA: 'MD5', teamB: 'MD4', slot: 10 },
-    { matchCode: 'M-MD-SF2', category: Category.MD, roundType: RoundType.SEMI, court: 2, teamA: 'MD3', teamB: 'MD2', slot: 10 },
-    { matchCode: 'M-XD-BRZ', category: Category.XD, roundType: RoundType.BRONZE, court: 3, teamA: 'XD5', teamB: 'XD2', slot: 11 },
-    { matchCode: 'M-MD-BRZ', category: Category.MD, roundType: RoundType.BRONZE, court: 3, teamA: 'MD4', teamB: 'MD2', slot: 12 },
-    { matchCode: 'M-XD-FIN', category: Category.XD, roundType: RoundType.FINAL, court: 1, teamA: 'XD4', teamB: 'XD3', slot: 13 },
-    { matchCode: 'M-MD-FIN', category: Category.MD, roundType: RoundType.FINAL, court: 1, teamA: 'MD5', teamB: 'MD3', slot: 14 },
+    { matchCode: 'M-XD-SF1', category: Category.XD, roundType: RoundType.SEMI, court: 1, slot: 9 },
+    { matchCode: 'M-XD-SF2', category: Category.XD, roundType: RoundType.SEMI, court: 2, slot: 9 },
+    { matchCode: 'M-MD-SF1', category: Category.MD, roundType: RoundType.SEMI, court: 1, slot: 10 },
+    { matchCode: 'M-MD-SF2', category: Category.MD, roundType: RoundType.SEMI, court: 2, slot: 10 },
+    { matchCode: 'M-XD-BRZ', category: Category.XD, roundType: RoundType.BRONZE, court: 3, slot: 11 },
+    { matchCode: 'M-MD-BRZ', category: Category.MD, roundType: RoundType.BRONZE, court: 3, slot: 12 },
+    { matchCode: 'M-XD-FIN', category: Category.XD, roundType: RoundType.FINAL, court: 1, slot: 13 },
+    { matchCode: 'M-MD-FIN', category: Category.MD, roundType: RoundType.FINAL, court: 1, slot: 14 },
   ];
 
   for (const p of playoffSchedule) {
-    const teamA = p.category === Category.XD ? xdTeams[p.teamA] : mdTeams[p.teamA];
-    const teamB = p.category === Category.XD ? xdTeams[p.teamB] : mdTeams[p.teamB];
     // Group stage finishes at 12 * 25m = 300m. Playoffs spaced at 45m intervals (30m BO3 + 15m rest)
     const matchStart = new Date(baseTime.getTime() + (300 + (p.slot - 9) * 45) * 60 * 1000);
 
@@ -464,8 +452,8 @@ async function main() {
         roundType: p.roundType,
         courtNumber: p.court,
         refereeId: referees[(p.court - 1) % 3].id,
-        teamAId: teamA.id,
-        teamBId: teamB.id,
+        teamAId: null,
+        teamBId: null,
         status: MatchStatus.SCHEDULED,
         rulesMode: RulesMode.BO3,
         startTime: matchStart,

@@ -627,8 +627,8 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-medium">
                   {matches.map((m) => {
-                    const pool1A = m.teamA.player1.pool === 1 ? m.teamA.player1.name : null;
-                    const pool1B = m.teamB.player1.pool === 1 ? m.teamB.player1.name : null;
+                    const pool1A = m.teamA?.player1?.pool === 1 ? m.teamA.player1.name : null;
+                    const pool1B = m.teamB?.player1?.pool === 1 ? m.teamB.player1.name : null;
                     const hasConflict = conflicts.some(
                       (c) => c.matchA.id === m.id || c.matchB.id === m.id
                     );
@@ -662,15 +662,15 @@ export default function AdminPage() {
                             : 'TBD'}
                         </td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-white">{m.teamA.teamCode}</div>
+                          <div className="font-bold text-white">{m.teamA?.teamCode || 'Chưa XĐ'}</div>
                           <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                            {m.teamA.player1.name} & {m.teamA.player2.name}
+                            {m.teamA ? `${m.teamA.player1.name} & ${m.teamA.player2.name}` : 'Chưa xác định'}
                           </div>
                         </td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-white">{m.teamB.teamCode}</div>
+                          <div className="font-bold text-white">{m.teamB?.teamCode || 'Chưa XĐ'}</div>
                           <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                            {m.teamB.player1.name} & {m.teamB.player2.name}
+                            {m.teamB ? `${m.teamB.player1.name} & ${m.teamB.player2.name}` : 'Chưa xác định'}
                           </div>
                         </td>
                         <td className="py-2.5 px-3 font-mono text-[11px] text-sai-yellow">
@@ -1028,7 +1028,7 @@ export default function AdminPage() {
               >
                 {matches.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.matchCode} ({m.category}) - {m.teamA.teamCode} vs {m.teamB.teamCode} [Court {m.courtNumber}]
+                    {m.matchCode} ({m.category}) - {m.teamA?.teamCode || 'Chưa XĐ'} vs {m.teamB?.teamCode || 'Chưa XĐ'} [Court {m.courtNumber}]
                   </option>
                 ))}
               </select>

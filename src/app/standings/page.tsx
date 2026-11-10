@@ -89,6 +89,142 @@ export default function StandingsPage() {
   const bronze = activePlayoffs.find((m) => m.matchCode.includes('BRZ'));
   const final = activePlayoffs.find((m) => m.matchCode.includes('FIN'));
 
+  // Check if group stage has completed all matches (4 teams * 3 matches / 2 = 6 matches each group -> 12 matches total)
+  const isGroupACompleted = currentGroupA.length === 4 && currentGroupA.every((t) => t.played >= 3);
+  const isGroupBCompleted = currentGroupB.length === 4 && currentGroupB.every((t) => t.played >= 3);
+  const isGroupStageCompleted = isGroupACompleted && isGroupBCompleted;
+
+  // Resolve team display for playoff slots
+  // If match already has team in DB -> use it!
+  // If not, but group stage is completed -> dynamically pick top 2 teams from standings!
+  // Otherwise -> null (shows "Chưa xác định" with badge A1 vs B2, etc.)
+  const getSemiTeam = (matchTeam?: any | null, defaultFromGroup?: GroupStandingItem | null) => {
+    if (matchTeam && matchTeam.id) return matchTeam;
+    if (isGroupStageCompleted && defaultFromGroup) {
+      return {
+        id: defaultFromGroup.teamId,
+        teamCode: defaultFromGroup.teamCode,
+        player1: { name: defaultFromGroup.player1Name },
+        player2: { name: defaultFromGroup.player2Name },
+      };
+    }
+    return null;
+  };
+
+  const sf1TeamA = getSemiTeam(semi1?.teamA, currentGroupA[0]);
+  const sf1TeamB = getSemiTeam(semi1?.teamB, currentGroupB[1]);
+  const sf2TeamA = getSemiTeam(semi2?.teamA, currentGroupB[0]);
+  const sf2TeamB = getSemiTeam(semi2?.teamB, currentGroupA[1]);
+
+  const bronzeTeamA = bronze?.teamA || null;
+  const bronzeTeamB = bronze?.teamB || null;
+  const finalTeamA = final?.teamA || null;
+  const finalTeamB = final?.teamB || null;
+
+  const renderPlayoffSlot = (
+    team: any | null,
+    placeholderNote: string,
+    score: number = 0,
+    scoreColor: string = 'text-sai-cyan'
+  ) => {
+    const isDetermined = !!team && (team.player1?.name || team.player1Name);
+    const p1 = team?.player1?.name || team?.player1Name;
+    const p2 = team?.player2?.name || team?.player2Name;
+    const code = team?.teamCode;
+
+    return (
+      <div
+        className={`flex items-center justify-between p-2.5 rounded-xl border transition ${
+          isDetermined
+            ? 'bg-slate-900 border-slate-800'
+            : 'bg-slate-950/60 border-dashed border-slate-800/90'
+        }`}
+      >
+        <div className="flex-1 min-w-0 pr-2">
+          {isDetermined ? (
+            <div>
+              <div className="font-black text-xs text-white truncate">
+                {p1} & {p2}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="rounded bg-sai-cyan/10 border border-sai-cyan/30 px-1 py-0.2 text-[9px] font-mono font-bold text-sai-cyan">
+                  {code}
+                </span>
+                <span className="text-[9px] text-slate-400 font-medium truncate">
+                  ({placeholderNote})
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="font-extrabold text-xs text-slate-400 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600 animate-pulse" />
+                <span>Chưa xác định</span>
+              </div>
+              <span className="inline-block text-[10px] text-sai-cyan font-bold font-mono mt-0.5">
+                {placeholderNote}
+              </span>
+            </div>
+          )}
+        </div>
+        <span className={`font-mono font-black text-base shrink-0 ${isDetermined ? scoreColor : 'text-slate-600'}`}>
+          {isDetermined ? score : '-'}
+        </span>
+      </div>
+    );
+  };
+
+  const renderFinalSlot = (
+    team: any | null,
+    placeholderNote: string,
+    score: number = 0,
+    scoreColor: string = 'text-sai-yellow'
+  ) => {
+    const isDetermined = !!team && (team.player1?.name || team.player1Name);
+    const p1 = team?.player1?.name || team?.player1Name;
+    const p2 = team?.player2?.name || team?.player2Name;
+    const code = team?.teamCode;
+
+    return (
+      <div
+        className={`flex items-center justify-between p-3 rounded-2xl border transition ${
+          isDetermined
+            ? 'bg-slate-900/90 border-slate-800'
+            : 'bg-slate-950/70 border-dashed border-slate-800'
+        }`}
+      >
+        <div className="flex-1 min-w-0 pr-2">
+          {isDetermined ? (
+            <div>
+              <span className="font-black text-sm text-white block truncate">
+                {p1} & {p2}
+              </span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-yellow">
+                  {code}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium">({placeholderNote})</span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <span className="font-extrabold text-sm text-slate-400 flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-slate-600 animate-pulse" />
+                Chưa xác định
+              </span>
+              <span className="block text-[11px] text-sai-yellow font-bold font-mono mt-1">
+                {placeholderNote}
+              </span>
+            </div>
+          )}
+        </div>
+        <span className={`font-mono font-black text-2xl shrink-0 ${isDetermined ? scoreColor : 'text-slate-600'}`}>
+          {isDetermined ? score : '-'}
+        </span>
+      </div>
+    );
+  };
+
   const renderStandingsTable = (title: string, groupItems: GroupStandingItem[]) => (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl backdrop-blur-md">
       <div className="flex items-center justify-between mb-4">
@@ -334,36 +470,20 @@ export default function StandingsPage() {
             {/* Semi 1: A1 vs B2 */}
             <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg hover:border-slate-700 transition">
               <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2">
-                <span className="font-mono font-bold text-sai-cyan">{semi1?.matchCode || 'SF1'}</span>
+                <span className="font-mono font-bold text-sai-cyan">{semi1?.matchCode || `M-${activeTab}-SF1`}</span>
                 <span>Court {semi1?.courtNumber || 1}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div>
-                    <div className="font-black text-xs text-white">
-                      {semi1?.teamA ? `${semi1.teamA.player1.name} & ${semi1.teamA.player2.name}` : `${activeTab} Nhất Bảng A`}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{semi1?.teamA.teamCode}</span>
-                  </div>
-                  <span className="font-mono font-black text-base text-sai-cyan">
-                    {semi1?.sets[0]?.teamAScore ?? 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div>
-                    <div className="font-black text-xs text-white">
-                      {semi1?.teamB ? `${semi1.teamB.player1.name} & ${semi1.teamB.player2.name}` : `${activeTab} Nhì Bảng B`}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{semi1?.teamB.teamCode}</span>
-                  </div>
-                  <span className="font-mono font-black text-base text-sai-yellow">
-                    {semi1?.sets[0]?.teamBScore ?? 0}
-                  </span>
-                </div>
+                {renderPlayoffSlot(sf1TeamA, `${activeTab} Nhất Bảng A (A1)`, semi1?.sets[0]?.teamAScore ?? 0, 'text-sai-cyan')}
+                {renderPlayoffSlot(sf1TeamB, `${activeTab} Nhì Bảng B (B2)`, semi1?.sets[0]?.teamBScore ?? 0, 'text-sai-yellow')}
               </div>
               <div className="mt-2 text-right">
                 <span className="text-[10px] font-bold text-emerald-400">
-                  {semi1?.winnerTeam ? `Thắng: ${semi1.winnerTeam.player1.name} & ${semi1.winnerTeam.player2.name}` : 'Đã lên lịch'}
+                  {semi1?.winnerTeam
+                    ? `Thắng: ${semi1.winnerTeam.player1.name} & ${semi1.winnerTeam.player2.name}`
+                    : sf1TeamA && sf1TeamB
+                    ? 'Đã xác định cặp đấu'
+                    : 'Chờ kết quả Vòng Bảng'}
                 </span>
               </div>
             </div>
@@ -371,36 +491,20 @@ export default function StandingsPage() {
             {/* Semi 2: B1 vs A2 */}
             <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-lg hover:border-slate-700 transition">
               <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2">
-                <span className="font-mono font-bold text-sai-cyan">{semi2?.matchCode || 'SF2'}</span>
+                <span className="font-mono font-bold text-sai-cyan">{semi2?.matchCode || `M-${activeTab}-SF2`}</span>
                 <span>Court {semi2?.courtNumber || 2}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div>
-                    <div className="font-black text-xs text-white">
-                      {semi2?.teamA ? `${semi2.teamA.player1.name} & ${semi2.teamA.player2.name}` : `${activeTab} Nhất Bảng B`}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{semi2?.teamA.teamCode}</span>
-                  </div>
-                  <span className="font-mono font-black text-base text-sai-cyan">
-                    {semi2?.sets[0]?.teamAScore ?? 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div>
-                    <div className="font-black text-xs text-white">
-                      {semi2?.teamB ? `${semi2.teamB.player1.name} & ${semi2.teamB.player2.name}` : `${activeTab} Nhì Bảng A`}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{semi2?.teamB.teamCode}</span>
-                  </div>
-                  <span className="font-mono font-black text-base text-sai-yellow">
-                    {semi2?.sets[0]?.teamBScore ?? 0}
-                  </span>
-                </div>
+                {renderPlayoffSlot(sf2TeamA, `${activeTab} Nhất Bảng B (B1)`, semi2?.sets[0]?.teamAScore ?? 0, 'text-sai-cyan')}
+                {renderPlayoffSlot(sf2TeamB, `${activeTab} Nhì Bảng A (A2)`, semi2?.sets[0]?.teamBScore ?? 0, 'text-sai-yellow')}
               </div>
               <div className="mt-2 text-right">
                 <span className="text-[10px] font-bold text-emerald-400">
-                  {semi2?.winnerTeam ? `Thắng: ${semi2.winnerTeam.player1.name} & ${semi2.winnerTeam.player2.name}` : 'Đã lên lịch'}
+                  {semi2?.winnerTeam
+                    ? `Thắng: ${semi2.winnerTeam.player1.name} & ${semi2.winnerTeam.player2.name}`
+                    : sf2TeamA && sf2TeamB
+                    ? 'Đã xác định cặp đấu'
+                    : 'Chờ kết quả Vòng Bảng'}
                 </span>
               </div>
             </div>
@@ -421,32 +525,16 @@ export default function StandingsPage() {
                 <span>Court {bronze?.courtNumber || 3}</span>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div>
-                    <div className="font-black text-xs text-white">
-                      {bronze?.teamA ? `${bronze.teamA.player1.name} & ${bronze.teamA.player2.name}` : 'Thua BK 1'}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{bronze?.teamA.teamCode}</span>
-                  </div>
-                  <span className="font-mono font-black text-base text-sai-cyan">
-                    {bronze?.sets[0]?.teamAScore ?? 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                  <div>
-                    <div className="font-black text-xs text-white">
-                      {bronze?.teamB ? `${bronze.teamB.player1.name} & ${bronze.teamB.player2.name}` : 'Thua BK 2'}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{bronze?.teamB.teamCode}</span>
-                  </div>
-                  <span className="font-mono font-black text-base text-sai-yellow">
-                    {bronze?.sets[0]?.teamBScore ?? 0}
-                  </span>
-                </div>
+                {renderPlayoffSlot(bronzeTeamA, 'Thua Bán Kết 1 (Loser SF1)', bronze?.sets[0]?.teamAScore ?? 0, 'text-sai-cyan')}
+                {renderPlayoffSlot(bronzeTeamB, 'Thua Bán Kết 2 (Loser SF2)', bronze?.sets[0]?.teamBScore ?? 0, 'text-sai-yellow')}
               </div>
               <div className="mt-2 text-right">
                 <span className="text-[10px] font-bold text-amber-300">
-                  {bronze?.winnerTeam ? `Hạng 3: ${bronze.winnerTeam.player1.name} & ${bronze.winnerTeam.player2.name}` : 'Đã lên lịch'}
+                  {bronze?.winnerTeam
+                    ? `Hạng 3: ${bronze.winnerTeam.player1.name} & ${bronze.winnerTeam.player2.name}`
+                    : bronzeTeamA && bronzeTeamB
+                    ? 'Đã xác định cặp đấu'
+                    : 'Chờ kết quả Bán Kết'}
                 </span>
               </div>
             </div>
@@ -465,39 +553,14 @@ export default function StandingsPage() {
               <div className="flex items-center justify-between text-[11px] text-sai-yellow mb-3 font-bold">
                 <span className="flex items-center gap-1.5 font-mono">
                   <Trophy className="h-4 w-4" />
-                  {final?.matchCode || 'FINAL'}
+                  {final?.matchCode || `M-${activeTab}-FIN`}
                 </span>
                 <span>Court {final?.courtNumber || 1}</span>
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
-                  <div>
-                    <span className="font-black text-sm text-white">
-                      {final?.teamA ? `${final.teamA.player1.name} & ${final.teamA.player2.name}` : 'Thắng BK 1'}
-                    </span>
-                    <span className="block text-[10px] text-slate-400 font-mono">
-                      {final?.teamA.teamCode}
-                    </span>
-                  </div>
-                  <span className="font-mono font-black text-2xl text-sai-cyan">
-                    {final?.sets[0]?.teamAScore ?? 0}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
-                  <div>
-                    <span className="font-black text-sm text-white">
-                      {final?.teamB ? `${final.teamB.player1.name} & ${final.teamB.player2.name}` : 'Thắng BK 2'}
-                    </span>
-                    <span className="block text-[10px] text-slate-400 font-mono">
-                      {final?.teamB.teamCode}
-                    </span>
-                  </div>
-                  <span className="font-mono font-black text-2xl text-sai-yellow">
-                    {final?.sets[0]?.teamBScore ?? 0}
-                  </span>
-                </div>
+                {renderFinalSlot(finalTeamA, 'Thắng Bán Kết 1 (Winner SF1)', final?.sets[0]?.teamAScore ?? 0, 'text-sai-cyan')}
+                {renderFinalSlot(finalTeamB, 'Thắng Bán Kết 2 (Winner SF2)', final?.sets[0]?.teamBScore ?? 0, 'text-sai-yellow')}
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-800 text-center">
@@ -507,7 +570,9 @@ export default function StandingsPage() {
                     <span>VÔ ĐỊCH: {final.winnerTeam.player1.name} & {final.winnerTeam.player2.name} ({final.winnerTeam.teamCode})</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-500 font-bold">Chờ thi đấu chung kết</span>
+                  <span className="text-xs text-slate-500 font-bold">
+                    {finalTeamA && finalTeamB ? 'Chờ thi đấu Chung Kết' : 'Chờ xác định hai đội vào Chung Kết'}
+                  </span>
                 )}
               </div>
             </div>

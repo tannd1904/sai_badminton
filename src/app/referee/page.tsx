@@ -347,7 +347,7 @@ export default function RefereePage() {
           >
             {matches.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.matchCode} ({m.category}): {m.teamA.player1.name} & {m.teamA.player2.name} ({m.teamA.teamCode}) vs {m.teamB.player1.name} & {m.teamB.player2.name} ({m.teamB.teamCode}) [{m.status}]
+                {m.matchCode} ({m.category}): {m.teamA?.player1?.name ? `${m.teamA.player1.name} & ${m.teamA.player2.name} (${m.teamA.teamCode})` : 'Chưa xác định'} vs {m.teamB?.player1?.name ? `${m.teamB.player1.name} & ${m.teamB.player2.name} (${m.teamB.teamCode})` : 'Chưa xác định'} [{m.status}]
               </option>
             ))}
           </select>
@@ -660,15 +660,15 @@ export default function RefereePage() {
 
             <div className="grid grid-cols-2 gap-3 mb-6">
               <button
-                onClick={() => handleConfirmFinishMatch(activeMatch.teamAId)}
+                onClick={() => handleConfirmFinishMatch(activeMatch.teamAId || undefined)}
                 className="p-4 rounded-2xl border-2 border-sai-cyan/40 bg-sai-cyan/10 hover:bg-sai-cyan/20 text-center transition group"
               >
                 <div className="font-black text-sm text-white leading-tight">
-                  <div>{activeMatch.teamA.player1.name}</div>
-                  <div className="text-slate-300">{activeMatch.teamA.player2.name}</div>
+                  <div>{activeMatch.teamA?.player1?.name || 'Team A'}</div>
+                  <div className="text-slate-300">{activeMatch.teamA?.player2?.name || ''}</div>
                 </div>
                 <div className="mt-1.5 inline-block rounded-md bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[11px] font-mono font-bold text-sai-cyan">
-                  {activeMatch.teamA.teamCode}
+                  {activeMatch.teamA?.teamCode || 'A'}
                 </div>
                 <div className="text-3xl font-black text-sai-cyan font-mono mt-2">
                   {currentSet.teamAScore}
@@ -679,15 +679,15 @@ export default function RefereePage() {
               </button>
 
               <button
-                onClick={() => handleConfirmFinishMatch(activeMatch.teamBId)}
+                onClick={() => handleConfirmFinishMatch(activeMatch.teamBId || undefined)}
                 className="p-4 rounded-2xl border-2 border-sai-yellow/40 bg-sai-yellow/10 hover:bg-sai-yellow/20 text-center transition group"
               >
                 <div className="font-black text-sm text-white leading-tight">
-                  <div>{activeMatch.teamB.player1.name}</div>
-                  <div className="text-slate-300">{activeMatch.teamB.player2.name}</div>
+                  <div>{activeMatch.teamB?.player1?.name || 'Team B'}</div>
+                  <div className="text-slate-300">{activeMatch.teamB?.player2?.name || ''}</div>
                 </div>
                 <div className="mt-1.5 inline-block rounded-md bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[11px] font-mono font-bold text-sai-yellow">
-                  {activeMatch.teamB.teamCode}
+                  {activeMatch.teamB?.teamCode || 'B'}
                 </div>
                 <div className="text-3xl font-black text-sai-yellow font-mono mt-2">
                   {currentSet.teamBScore}
