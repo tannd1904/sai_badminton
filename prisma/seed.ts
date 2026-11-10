@@ -80,38 +80,38 @@ async function main() {
   console.log('--- Seeding 24 Players ---');
   // Pool 1: 8 Men (Score 70-100) -> Plays MD and XD
   const pool1Raw = [
-    { name: 'Tuyển Nguyễn', powerRating: 80 },
-    { name: 'Nguyễn Duy Tân', powerRating: 80 },
-    { name: 'NGUYEN TRONG NGHIA', powerRating: 100 },
-    { name: 'Nguyễn Tuấn Kiên', powerRating: 90 },
-    { name: 'Nguyễn Hoàng Linh', powerRating: 90 },
-    { name: 'Phạm Quốc Toản', powerRating: 70 },
-    { name: 'Ty Xuân Việt', powerRating: 70 },
-    { name: 'Cường (vãng lai)', powerRating: 70 },
+    { name: 'Tuyển Nguyễn', powerRating: 80, department: 'SAI Engineering' },
+    { name: 'Nguyễn Duy Tân', powerRating: 80, department: 'SAI Engineering' },
+    { name: 'Nguyễn Trọng Nghĩa', powerRating: 100, department: 'Vãng lai' },
+    { name: 'Nguyễn Tuấn Kiên', powerRating: 90, department: 'SAI Engineering' },
+    { name: 'Nguyễn Hoàng Linh', powerRating: 90, department: 'SAI Engineering' },
+    { name: 'Phạm Quốc Toản', powerRating: 70, department: 'Vãng lai' },
+    { name: 'Ty Xuân Việt', powerRating: 70, department: 'SAI Engineering' },
+    { name: 'Cường (vãng lai)', powerRating: 70, department: 'Vãng lai' },
   ];
 
   // Pool 2: 8 Men (Score 50-60) -> Plays MD only
   const pool2Raw = [
-    { name: 'Lê Văn Linh', powerRating: 55 },
-    { name: 'Bùi Thành Đạt', powerRating: 60 },
-    { name: 'Minh (vãng lai)', powerRating: 50 },
-    { name: 'Phát', powerRating: 55 },
-    { name: 'Lương Tấn Đại', powerRating: 55 },
-    { name: 'Nguyễn Tuấn Anh', powerRating: 55 },
-    { name: 'Nguyễn Thành Tâm', powerRating: 50 },
-    { name: 'Nguyễn Văn Huy', powerRating: 60 },
+    { name: 'Lê Văn Linh', powerRating: 55, department: 'SAI Engineering' },
+    { name: 'Bùi Thành Đạt', powerRating: 60, department: 'SAI Engineering' },
+    { name: 'Minh (vãng lai)', powerRating: 50, department: 'Vãng lai' },
+    { name: 'Phát (chồng Trúc)', powerRating: 55, department: 'Vãng lai' },
+    { name: 'Lương Tấn Đại', powerRating: 55, department: 'SAI Product' },
+    { name: 'Nguyễn Tuấn Anh', powerRating: 55, department: 'SAI Engineering' },
+    { name: 'Nguyễn Thành Tâm', powerRating: 50, department: 'Vãng lai' },
+    { name: 'Nguyễn Văn Huy', powerRating: 60, department: 'Ex-SAI member' },
   ];
 
   // Pool 3: 8 Women (Score 40-45) -> Plays XD only
   const pool3Raw = [
-    { name: 'Meetu', powerRating: 40 },
-    { name: 'Nguyễn Trần Thảo Trúc', powerRating: 45 },
-    { name: 'Hà (vãng lai)', powerRating: 40 },
-    { name: 'Le Huynh Diem Thuy', powerRating: 40 },
-    { name: 'Đinh Thị Thu Hiền', powerRating: 40 },
-    { name: 'Trần Thị Thuỳ Linh', powerRating: 45 },
-    { name: 'Trần Văn Kim Anh', powerRating: 45 },
-    { name: 'Ngọc (vãng lai)', powerRating: 45 },
+    { name: 'Meetu', powerRating: 40, department: 'SAI Operations' },
+    { name: 'Nguyễn Trần Thảo Trúc', powerRating: 45, department: 'SAI Operations' },
+    { name: 'Hà (vãng lai)', powerRating: 40, department: 'Vãng lai' },
+    { name: 'Lê Huỳnh Diễm Thúy', powerRating: 40, department: 'SAI Operations' },
+    { name: 'Đinh Thị Thu Hiền', powerRating: 40, department: 'Vãng lai' },
+    { name: 'Trần Thị Thuỳ Linh', powerRating: 45, department: 'Ex-SAI member' },
+    { name: 'Trần Văn Kim Anh', powerRating: 45, department: 'SAI Engineering' },
+    { name: 'Ngọc (vãng lai)', powerRating: 45, department: 'Vãng lai' },
   ];
 
   const pool1Players: Record<string, any> = {};
@@ -123,7 +123,7 @@ async function main() {
         pool: 1,
         powerRating: p.powerRating,
         isSaiStaff: true,
-        department: 'SAI Engineering',
+        department: p.department,
       },
     });
     pool1Players[p.name] = created;
@@ -138,7 +138,7 @@ async function main() {
         pool: 2,
         powerRating: p.powerRating,
         isSaiStaff: true,
-        department: 'SAI Product',
+        department: p.department,
       },
     });
     pool2Players[p.name] = created;
@@ -153,7 +153,7 @@ async function main() {
         pool: 3,
         powerRating: p.powerRating,
         isSaiStaff: true,
-        department: 'SAI Operations',
+        department: p.department,
       },
     });
     pool3Players[p.name] = created;
@@ -166,8 +166,8 @@ async function main() {
   const xdConfigs = [
     { code: 'XD1', p1: 'Tuyển Nguyễn', p2: 'Meetu', group: GroupName.B },
     { code: 'XD2', p1: 'Nguyễn Duy Tân', p2: 'Nguyễn Trần Thảo Trúc', group: GroupName.A },
-    { code: 'XD3', p1: 'NGUYEN TRONG NGHIA', p2: 'Hà (vãng lai)', group: GroupName.B },
-    { code: 'XD4', p1: 'Nguyễn Tuấn Kiên', p2: 'Le Huynh Diem Thuy', group: GroupName.A },
+    { code: 'XD3', p1: 'Nguyễn Trọng Nghĩa', p2: 'Hà (vãng lai)', group: GroupName.B },
+    { code: 'XD4', p1: 'Nguyễn Tuấn Kiên', p2: 'Lê Huỳnh Diễm Thúy', group: GroupName.A },
     { code: 'XD5', p1: 'Nguyễn Hoàng Linh', p2: 'Đinh Thị Thu Hiền', group: GroupName.B },
     { code: 'XD6', p1: 'Phạm Quốc Toản', p2: 'Trần Thị Thuỳ Linh', group: GroupName.A },
     { code: 'XD7', p1: 'Ty Xuân Việt', p2: 'Trần Văn Kim Anh', group: GroupName.B },
@@ -198,8 +198,8 @@ async function main() {
   const mdConfigs = [
     { code: 'MD1', p1: 'Phạm Quốc Toản', p2: 'Lê Văn Linh', group: GroupName.A },
     { code: 'MD2', p1: 'Nguyễn Duy Tân', p2: 'Bùi Thành Đạt', group: GroupName.A },
-    { code: 'MD3', p1: 'NGUYEN TRONG NGHIA', p2: 'Minh (vãng lai)', group: GroupName.B },
-    { code: 'MD4', p1: 'Nguyễn Tuấn Kiên', p2: 'Phát', group: GroupName.B },
+    { code: 'MD3', p1: 'Nguyễn Trọng Nghĩa', p2: 'Minh (vãng lai)', group: GroupName.B },
+    { code: 'MD4', p1: 'Nguyễn Tuấn Kiên', p2: 'Phát (chồng Trúc)', group: GroupName.B },
     { code: 'MD5', p1: 'Nguyễn Hoàng Linh', p2: 'Lương Tấn Đại', group: GroupName.A },
     { code: 'MD6', p1: 'Tuyển Nguyễn', p2: 'Nguyễn Tuấn Anh', group: GroupName.B },
     { code: 'MD7', p1: 'Ty Xuân Việt', p2: 'Nguyễn Thành Tâm', group: GroupName.B },
