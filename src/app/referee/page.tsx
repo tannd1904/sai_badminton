@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { MatchData, AuditActionType } from '../../types';
 import { useLanguage } from '../../lib/i18n';
+import { evaluateBwfMatch, evaluateBwfSet, isBwfSetPointFor } from '../../lib/bwf-rules';
 
 export default function RefereePage() {
   const { data: session } = useSession();
@@ -33,9 +34,10 @@ export default function RefereePage() {
   const [loading, setLoading] = useState(true);
   const [optimisticUpdatePending, setOptimisticUpdatePending] = useState(false);
 
-  // Verification Modals
+  // Verification & Auto-Winner Modals
   const [showEndSetModal, setShowEndSetModal] = useState(false);
   const [showEndMatchModal, setShowEndMatchModal] = useState(false);
+  const [showAutoWinModal, setShowAutoWinModal] = useState(false);
   const [matchWinnerCandidate, setMatchWinnerCandidate] = useState<string | null>(null);
 
   // Timer states (Stopwatch count-up)
@@ -171,13 +173,10 @@ export default function RefereePage() {
   const mutateScore = async (action: string, team?: 'A' | 'B') => {
     if (!activeMatch) return;
 
-    // Trigger local tactile sound
-    if (action === 'ADD_POINT') soundManager.playPointBeep();
-    if (action === 'UNDO' || action === 'SUBTRACT_POINT') soundManager.playUndoSound();
-
     // Optimistic local state update
     const currentSetNum = activeMatch.currentSet || 1;
-    const currentSet = activeMatch.sets.find((s) => s.setNumber === currentSetNum) || {
+    const existingSet = activeMatch.sets.find((s) => s.setNumber === currentSetNum);
+    const currentSet = existingSet || {
       id: 'opt',
       matchId: activeMatch.id,
       setNumber: currentSetNum,
@@ -185,6 +184,14 @@ export default function RefereePage() {
       teamBScore: 0,
       isFinished: false,
     };
+
+    if (action === 'ADD_POINT' && (activeMatch.status === 'COMPLETED' || currentSet.isFinished)) {
+      return;
+    }
+
+    // Trigger local tactile sound
+    if (action === 'ADD_POINT') soundManager.playPointBeep();
+    if (action === 'UNDO' || action === 'SUBTRACT_POINT') soundManager.playUndoSound();
 
     let optA = currentSet.teamAScore;
     let optB = currentSet.teamBScore;
@@ -201,21 +208,58 @@ export default function RefereePage() {
         if (optA > 0) optA -= 1;
         else if (optB > 0) optB -= 1;
       }
+      setShowAutoWinModal(false);
     } else if (action === 'SWITCH_COURT') {
       optSwitched = !optSwitched;
     }
 
-    // Apply optimistic update immediately
-    const updatedSets = activeMatch.sets.map((s) =>
-      s.setNumber === currentSetNum ? { ...s, teamAScore: optA, teamBScore: optB } : s
+    const optSetOutcome = evaluateBwfSet(optA, optB);
+    const updatedSets = existingSet
+      ? activeMatch.sets.map((s) =>
+          s.setNumber === currentSetNum
+            ? { ...s, teamAScore: optA, teamBScore: optB, isFinished: optSetOutcome.setWon }
+            : s
+        )
+      : [
+          ...activeMatch.sets,
+          { ...currentSet, teamAScore: optA, teamBScore: optB, isFinished: optSetOutcome.setWon },
+        ];
+
+    const optMatchOutcome = evaluateBwfMatch(
+      updatedSets,
+      activeMatch.rulesMode,
+      activeMatch.teamAId,
+      activeMatch.teamBId
     );
+    const optWinnerTeam =
+      optMatchOutcome.winnerSide === 'A'
+        ? activeMatch.teamA
+        : optMatchOutcome.winnerSide === 'B'
+        ? activeMatch.teamB
+        : null;
+    const willAutoComplete = action === 'ADD_POINT' && optMatchOutcome.isCompleted;
+    const nextStatus = willAutoComplete
+      ? 'COMPLETED'
+      : action === 'UNDO' || action === 'SUBTRACT_POINT'
+      ? 'IN_PROGRESS'
+      : activeMatch.status === 'COMPLETED'
+      ? 'COMPLETED'
+      : 'IN_PROGRESS';
 
     setActiveMatch({
       ...activeMatch,
-      status: 'IN_PROGRESS',
+      status: nextStatus,
       courtSideSwitched: optSwitched,
+      winnerTeamId: nextStatus === 'COMPLETED' ? optMatchOutcome.winnerTeamId : null,
+      winnerTeam: nextStatus === 'COMPLETED' ? (optWinnerTeam ?? activeMatch.winnerTeam) : null,
       sets: updatedSets,
     });
+
+    if (willAutoComplete) {
+      setTimerRunning(false);
+      soundManager.playVictoryFanfare();
+      setShowAutoWinModal(true);
+    }
 
     setOptimisticUpdatePending(true);
 
@@ -227,21 +271,26 @@ export default function RefereePage() {
           action,
           team,
           timerRemainingSeconds: timerSeconds,
-          timerIsRunning: timerRunning,
+          timerIsRunning: willAutoComplete ? false : timerRunning,
         }),
       });
 
       if (res.ok) {
         const result = await res.json();
         setActiveMatch(result.match);
+        setMatches((prev) => prev.map((m) => (m.id === result.match.id ? result.match : m)));
         if (result.auditLog) {
           setAuditLogs((prev) => [result.auditLog, ...prev]);
         }
 
-        // Check if match completed
+        // Auto-determined winner via BWF rules -> show Auto-Winner banner/modal (do NOT ask referee to pick winner manually)
         if (result.match.status === 'COMPLETED') {
-          soundManager.playVictoryFanfare();
-          setShowEndMatchModal(true);
+          setTimerRunning(false);
+          if (!willAutoComplete) {
+            soundManager.playVictoryFanfare();
+          }
+          setShowEndMatchModal(false);
+          setShowAutoWinModal(true);
         }
       }
     } catch (err) {
@@ -267,12 +316,22 @@ export default function RefereePage() {
       if (res.ok) {
         const result = await res.json();
         setActiveMatch(result.match);
+        setMatches((prev) => prev.map((m) => (m.id === result.match.id ? result.match : m)));
+        setTimerRunning(false);
         setShowEndMatchModal(false);
+        setShowAutoWinModal(true);
         soundManager.playVictoryFanfare();
       }
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleNextScheduledMatch = async () => {
+    setShowAutoWinModal(false);
+    setTimerRunning(false);
+    setTimerSeconds(0);
+    await fetchMatches();
   };
 
   // Format timer as MM:SS
@@ -307,6 +366,22 @@ export default function RefereePage() {
   const rightScore = isSwitched ? currentSet.teamAScore : currentSet.teamBScore;
   const leftTeamLetter = isSwitched ? 'B' : 'A';
   const rightTeamLetter = isSwitched ? 'A' : 'B';
+  const isMatchCompleted = activeMatch?.status === 'COMPLETED';
+  const leftSetPoint = !isMatchCompleted && isBwfSetPointFor(leftScore, rightScore);
+  const rightSetPoint = !isMatchCompleted && isBwfSetPointFor(rightScore, leftScore);
+  const resolvedWinnerTeam =
+    activeMatch?.winnerTeam ||
+    (activeMatch?.winnerTeamId && activeMatch.winnerTeamId === activeMatch.teamAId
+      ? activeMatch.teamA
+      : activeMatch?.winnerTeamId && activeMatch.winnerTeamId === activeMatch.teamBId
+      ? activeMatch.teamB
+      : null);
+  const resolvedWinnerSide: 'A' | 'B' | undefined =
+    activeMatch?.winnerTeamId === activeMatch?.teamAId
+      ? 'A'
+      : activeMatch?.winnerTeamId === activeMatch?.teamBId
+      ? 'B'
+      : undefined;
 
   return (
     <div className="mx-auto max-w-4xl px-3 sm:px-4 py-3 sm:py-6 select-none">
@@ -372,7 +447,13 @@ export default function RefereePage() {
                 {activeMatch.category} - {activeMatch.roundType}
               </span>
               <span className="text-slate-400">
-                {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? (locale === 'vi' ? '1 Set Knockout (21 điểm)' : '1 Set Sudden Death (21 pts)') : (locale === 'vi' ? 'BO3 (21 điểm, cách 2)' : 'Best of 3 Sets (21 pts deuce max 30)')}
+                {activeMatch.rulesMode === 'SINGLE_SET_10MIN'
+                  ? locale === 'vi'
+                    ? 'Luật BWF 1 Set (21 điểm, cách 2, tối đa 30)'
+                    : 'BWF 1 Set (21 pts, deuce max 30)'
+                  : locale === 'vi'
+                  ? 'Luật BWF BO3 (21 điểm, cách 2, tối đa 30)'
+                  : 'Best of 3 Sets (21 pts, deuce max 30)'}
               </span>
             </div>
 
@@ -441,6 +522,34 @@ export default function RefereePage() {
             </div>
           </div>
 
+          {/* Auto-Win Summary Banner when completed */}
+          {isMatchCompleted && resolvedWinnerTeam && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <Award className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                    Đội thắng (Tự động theo luật BWF)
+                  </div>
+                  <div className="text-sm font-black text-white">
+                    {resolvedWinnerTeam.player1?.name} &amp; {resolvedWinnerTeam.player2?.name}{' '}
+                    <span className="ml-1 rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-xs text-emerald-300">
+                      {resolvedWinnerTeam.teamCode}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleNextScheduledMatch}
+                className="rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-black text-slate-950 hover:bg-emerald-400 transition"
+              >
+                Chuyển trận tiếp theo
+              </button>
+            </div>
+          )}
+
           {/* MASSIVE TOUCH SCOREBOARD (Referee Main Canvas) */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {/* LEFT TEAM TOUCH TARGET */}
@@ -449,9 +558,15 @@ export default function RefereePage() {
                 <span className="rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300">
                   {isSwitched ? 'Sân Phải' : 'Sân Trái'}
                 </span>
-                <span className="font-extrabold text-xs text-sai-cyan tracking-wider">
-                  TEAM {leftTeamLetter}
-                </span>
+                {leftSetPoint ? (
+                  <span className="rounded-full bg-amber-500/20 border border-amber-400/50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse">
+                    {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? 'MATCH POINT' : 'GAME POINT'}
+                  </span>
+                ) : (
+                  <span className="font-extrabold text-xs text-sai-cyan tracking-wider">
+                    TEAM {leftTeamLetter}
+                  </span>
+                )}
               </div>
 
               {/* Team Name and Players - Athlete Names Large & Prominent */}
@@ -470,13 +585,14 @@ export default function RefereePage() {
               {/* MASSIVE SCORE BUTTON (+1 POINT) */}
               <button
                 onClick={() => mutateScore('ADD_POINT', leftTeamLetter)}
-                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-sai-cyan py-10 sm:py-14 text-white shadow-xl shadow-cyan-500/20 active:scale-95 transition-all hover:brightness-110"
+                disabled={isMatchCompleted}
+                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-sai-cyan py-10 sm:py-14 text-white shadow-xl shadow-cyan-500/20 active:scale-95 transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 <span className="text-6xl sm:text-8xl font-black tracking-tight font-mono drop-shadow-md">
                   {leftScore}
                 </span>
                 <span className="mt-2 text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-3 py-1 rounded-full group-hover:scale-105 transition-transform">
-                  +1 ĐIỂM
+                  {isMatchCompleted ? 'ĐÃ KẾT THÚC' : '+1 ĐIỂM'}
                 </span>
               </button>
 
@@ -499,9 +615,15 @@ export default function RefereePage() {
                 <span className="rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300">
                   {isSwitched ? 'Sân Trái' : 'Sân Phải'}
                 </span>
-                <span className="font-extrabold text-xs text-sai-yellow tracking-wider">
-                  TEAM {rightTeamLetter}
-                </span>
+                {rightSetPoint ? (
+                  <span className="rounded-full bg-amber-500/20 border border-amber-400/50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse">
+                    {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? 'MATCH POINT' : 'GAME POINT'}
+                  </span>
+                ) : (
+                  <span className="font-extrabold text-xs text-sai-yellow tracking-wider">
+                    TEAM {rightTeamLetter}
+                  </span>
+                )}
               </div>
 
               {/* Team Name and Players - Athlete Names Large & Prominent */}
@@ -520,13 +642,14 @@ export default function RefereePage() {
               {/* MASSIVE SCORE BUTTON (+1 POINT) */}
               <button
                 onClick={() => mutateScore('ADD_POINT', rightTeamLetter)}
-                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 to-sai-yellow py-10 sm:py-14 text-white shadow-xl shadow-yellow-500/20 active:scale-95 transition-all hover:brightness-110"
+                disabled={isMatchCompleted}
+                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 to-sai-yellow py-10 sm:py-14 text-white shadow-xl shadow-yellow-500/20 active:scale-95 transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 <span className="text-6xl sm:text-8xl font-black tracking-tight font-mono drop-shadow-md text-slate-950">
                   {rightScore}
                 </span>
                 <span className="mt-2 text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-3 py-1 rounded-full group-hover:scale-105 transition-transform">
-                  +1 ĐIỂM
+                  {isMatchCompleted ? 'ĐÃ KẾT THÚC' : '+1 ĐIỂM'}
                 </span>
               </button>
 
@@ -705,6 +828,75 @@ export default function RefereePage() {
               >
                 {t('referee.cancel')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BWF AUTO-WINNER CELEBRATION & PROGRESSION MODAL */}
+      {showAutoWinModal && activeMatch && isMatchCompleted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-500/40 bg-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400">
+                <Award className="h-7 w-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">
+                  Trận đấu kết thúc (Luật BWF)
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {activeMatch.matchCode} • Đã tự động cập nhật Sân &amp; BXH
+                </p>
+              </div>
+            </div>
+
+            {resolvedWinnerTeam && (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-4 text-center mb-4">
+                <div className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 mb-1">
+                  Đội giành chiến thắng
+                </div>
+                <div className="text-xl font-black text-white leading-snug">
+                  {resolvedWinnerTeam.player1?.name} &amp; {resolvedWinnerTeam.player2?.name}
+                </div>
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3 py-0.5 text-xs font-mono font-black text-emerald-300">
+                  {resolvedWinnerTeam.teamCode}
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-2 font-mono text-2xl font-black text-white">
+                  <span className="text-sai-cyan">{currentSet.teamAScore}</span>
+                  <span className="text-slate-600">-</span>
+                  <span className="text-sai-yellow">{currentSet.teamBScore}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-emerald-300 mb-5">
+              <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400" />
+              <span>Tỉ số và điểm Bảng Xếp Hạng đã được đồng bộ tự động.</span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleNextScheduledMatch}
+                className="w-full rounded-xl bg-emerald-500 py-3 text-sm font-black text-slate-950 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20"
+              >
+                Chuyển sang trận tiếp theo
+              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => mutateScore('SUBTRACT_POINT', resolvedWinnerSide)}
+                  className="rounded-xl border border-slate-700 bg-slate-800 py-2 text-xs font-bold text-slate-300 hover:text-white flex items-center justify-center gap-1.5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Hoàn tác điểm cuối
+                </button>
+                <button
+                  onClick={() => setShowAutoWinModal(false)}
+                  className="rounded-xl border border-slate-700 bg-slate-900 py-2 text-xs font-bold text-slate-400 hover:text-white"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>

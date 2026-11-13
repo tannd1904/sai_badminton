@@ -97,9 +97,21 @@ export async function POST(
     });
 
     if (updated.status === MatchStatus.COMPLETED) {
-      advancePlayoffsForCategory(updated.category).catch((err) =>
-        console.error('[Auto Playoff Sync Override Error]:', err)
-      );
+      try {
+        await advancePlayoffsForCategory(updated.category);
+      } catch (err) {
+        console.error('[Auto Playoff Sync Override Error]:', err);
+      }
+    }
+
+    if (status) {
+      await publishEvent(CHANNELS.MATCH_STATUS, {
+        matchId: updated.id,
+        status: updated.status,
+        category: updated.category,
+        winnerTeamId: updated.winnerTeamId,
+        courtNumber: updated.courtNumber,
+      });
     }
 
     return NextResponse.json({ success: true, match: updated });

@@ -7,7 +7,7 @@ import { GroupStandingItem, MatchData, TeamData } from '../../types';
 import { useLanguage } from '../../lib/i18n';
 
 export default function StandingsPage() {
-  const { subscribeToScore, subscribeToMatchStatus } = useSocket();
+  const { subscribeToScore, subscribeToMatchStatus, subscribeToSchedule } = useSocket();
   const { t, locale } = useLanguage();
   const [activeTab, setActiveTab] = useState<'XD' | 'MD'>('XD');
   const [standings, setStandings] = useState<{
@@ -25,14 +25,18 @@ export default function StandingsPage() {
   const [playoffMatches, setPlayoffMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchStandings = useCallback(async () => {
+  const fetchStandings = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
-      const [standingsRes, matchesRes, teamsRes] = await Promise.all([
+      if (!silent) setLoading(true);
+      const requests: Promise<Response>[] = [
         fetch('/api/standings'),
         fetch('/api/matches?roundType=SEMI,BRONZE,FINAL'),
-        fetch('/api/teams'),
-      ]);
+      ];
+      if (!silent) {
+        requests.push(fetch('/api/teams'));
+      }
+
+      const [standingsRes, matchesRes, teamsRes] = await Promise.all(requests);
 
       if (standingsRes.ok) {
         const sData = await standingsRes.json();
@@ -44,35 +48,56 @@ export default function StandingsPage() {
         setPlayoffMatches(mData);
       }
 
-      if (teamsRes.ok) {
+      if (teamsRes?.ok) {
         const tData = await teamsRes.json();
         setAllTeams(tData.teams || []);
       }
     } catch (e) {
       console.error('Failed to load standings:', e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchStandings();
+    fetchStandings(false);
   }, [fetchStandings]);
 
-  // Subscribe to live score/match status updates
+  // Subscribe to live score/match status updates without flashing full-page spinner
   useEffect(() => {
-    const unsubScore = subscribeToScore(() => {
-      fetchStandings();
+    const unsubScore = subscribeToScore((payload: any) => {
+      if (!payload) return;
+      // Update live playoff match scores immediately in memory
+      setPlayoffMatches((prev) =>
+        prev.map((m) =>
+          m.id === payload.matchId
+            ? {
+                ...m,
+                status: payload.status ?? m.status,
+                winnerTeamId: payload.winnerTeamId ?? m.winnerTeamId,
+                winnerTeam: payload.winnerTeam ?? m.winnerTeam,
+                sets: payload.sets ?? m.sets,
+              }
+            : m
+        )
+      );
+      if (payload.overrideReason) {
+        fetchStandings(true);
+      }
     });
     const unsubStatus = subscribeToMatchStatus(() => {
-      fetchStandings();
+      fetchStandings(true);
+    });
+    const unsubSchedule = subscribeToSchedule(() => {
+      fetchStandings(true);
     });
 
     return () => {
       unsubScore();
       unsubStatus();
+      unsubSchedule();
     };
-  }, [subscribeToScore, subscribeToMatchStatus, fetchStandings]);
+  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, fetchStandings]);
 
   const currentGroupA = activeTab === 'XD' ? standings.xdGroupA : standings.mdGroupA;
   const currentGroupB = activeTab === 'XD' ? standings.xdGroupB : standings.mdGroupB;

@@ -19,7 +19,7 @@ import { useLanguage } from '../lib/i18n';
 import { getPlayoffSlotInfo } from '../lib/playoff-utils';
 
 export default function HomePage() {
-  const { isConnected, subscribeToScore, subscribeToMatchStatus } = useSocket();
+  const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule } = useSocket();
   const { t, locale } = useLanguage();
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,15 +67,20 @@ export default function HomePage() {
       );
     });
 
-    const unsubStatus = subscribeToMatchStatus((payload: any) => {
+    const unsubStatus = subscribeToMatchStatus(() => {
+      fetchMatches();
+    });
+
+    const unsubSchedule = subscribeToSchedule(() => {
       fetchMatches();
     });
 
     return () => {
       unsubScore();
       unsubStatus();
+      unsubSchedule();
     };
-  }, [subscribeToScore, subscribeToMatchStatus, fetchMatches]);
+  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, fetchMatches]);
 
   // Sort matches chronologically (startTime asc, courtNumber asc, orderIndex asc)
   const sortedMatches = [...matches].sort((a, b) => {

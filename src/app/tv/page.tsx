@@ -9,7 +9,7 @@ import { getPlayoffSlotInfo } from '../../lib/playoff-utils';
 
 export default function TVScoreboardPage() {
   const { t, locale } = useLanguage();
-  const { subscribeToScore, subscribeToMatchStatus } = useSocket();
+  const { subscribeToScore, subscribeToMatchStatus, subscribeToSchedule } = useSocket();
   const [selectedCourt, setSelectedCourt] = useState<number | 'ALL'>('ALL');
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -56,11 +56,16 @@ export default function TVScoreboardPage() {
       fetchMatches();
     });
 
+    const unsubSchedule = subscribeToSchedule(() => {
+      fetchMatches();
+    });
+
     return () => {
       unsubScore();
       unsubStatus();
+      unsubSchedule();
     };
-  }, [subscribeToScore, subscribeToMatchStatus, fetchMatches]);
+  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, fetchMatches]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -186,7 +191,7 @@ export default function TVScoreboardPage() {
               <span className="text-sai-yellow">{rightTeam ? rightScore : '-'}</span>
             </div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2 block">
-              {match.rulesMode === 'BO3' ? `Set ${currentSetNum} of 3` : 'Single Set Sudden-Death'}
+              {match.rulesMode === 'BO3' ? `Set ${currentSetNum} of 3` : 'BWF 1 Set (21 pts)'}
             </span>
           </div>
 

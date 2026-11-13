@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
+import { evaluateBwfSet } from '../../../../../lib/bwf-rules';
 import { publishEvent, CHANNELS } from '../../../../../lib/redis';
 import { RulesMode, MatchStatus, AuditActionType } from '@prisma/client';
 import { advancePlayoffsForCategory } from '../../../../../lib/playoffs';
@@ -50,6 +51,15 @@ export async function POST(
     let scoringTeamId: string | null = null;
 
     if (action === 'ADD_POINT') {
+      // Prevent adding extra points once the set or match has already been won under BWF rules
+      if (match.status === MatchStatus.COMPLETED || currentSet.isFinished) {
+        return NextResponse.json({
+          success: true,
+          alreadyCompleted: true,
+          match,
+        });
+      }
+
       auditAction = AuditActionType.ADD_POINT;
       if (team === 'A') {
         updatedSet.teamAScore += 1;
@@ -67,26 +77,14 @@ export async function POST(
       let setWon = false;
       let setWinnerId: string | null = null;
 
-      if (match.rulesMode === RulesMode.SINGLE_SET_10MIN) {
-        // Sudden death to 21
-        if (updatedSet.teamAScore >= 21) {
-          setWon = true;
-          setWinnerId = match.teamAId;
-        } else if (updatedSet.teamBScore >= 21) {
-          setWon = true;
-          setWinnerId = match.teamBId;
-        }
-      } else {
-        // BO3 standard badminton rules (21 points, deuce by 2, max 30)
-        const a = updatedSet.teamAScore;
-        const b = updatedSet.teamBScore;
-        if ((a >= 21 && a - b >= 2) || a === 30) {
-          setWon = true;
-          setWinnerId = match.teamAId;
-        } else if ((b >= 21 && b - a >= 2) || b === 30) {
-          setWon = true;
-          setWinnerId = match.teamBId;
-        }
+      // Official BWF 21-point rules (win by 2 from 20-20, max cap at 30) apply to all sets
+      const { setWon: bwfSetWon, winnerSide } = evaluateBwfSet(
+        updatedSet.teamAScore,
+        updatedSet.teamBScore
+      );
+      if (bwfSetWon && winnerSide) {
+        setWon = true;
+        setWinnerId = winnerSide === 'A' ? match.teamAId : match.teamBId;
       }
 
       if (setWon) {
@@ -183,48 +181,46 @@ export async function POST(
       }
     }
 
-    // Persist set update
-    const savedSet = await prisma.matchSet.update({
-      where: { id: currentSet.id },
-      data: {
-        teamAScore: updatedSet.teamAScore,
-        teamBScore: updatedSet.teamBScore,
-        isFinished: updatedSet.isFinished,
-      },
-    });
-
-    // Create Audit Log
-    const auditLog = await prisma.scoreAuditLog.create({
-      data: {
-        matchId: match.id,
-        setNumber: currentSetNum,
-        scoringTeamId,
-        actionType: auditAction,
-        scoreSnapshotA: savedSet.teamAScore,
-        scoreSnapshotB: savedSet.teamBScore,
-      },
-    });
-
-    // Persist match updates
-    const updatedMatch = await prisma.match.update({
-      where: { id: match.id },
-      data: {
-        status: matchStatus,
-        winnerTeamId,
-        courtSideSwitched,
-        currentSet: nextSetNum,
-        endTime: matchEndTime,
-        ...(startTimeCheck(match.startTime, matchStatus)),
-        ...(timerRemainingSeconds !== undefined && { timerRemainingSeconds }),
-        ...(timerIsRunning !== undefined && { timerIsRunning }),
-      },
-      include: {
-        teamA: { include: { player1: true, player2: true } },
-        teamB: { include: { player1: true, player2: true } },
-        winnerTeam: { include: { player1: true, player2: true } },
-        sets: { orderBy: { setNumber: 'asc' } },
-      },
-    });
+    // Persist set, audit log, and match updates in parallel (~1x DB RTT instead of 3x)
+    const [savedSet, auditLog, updatedMatch] = await Promise.all([
+      prisma.matchSet.update({
+        where: { id: currentSet.id },
+        data: {
+          teamAScore: updatedSet.teamAScore,
+          teamBScore: updatedSet.teamBScore,
+          isFinished: updatedSet.isFinished,
+        },
+      }),
+      prisma.scoreAuditLog.create({
+        data: {
+          matchId: match.id,
+          setNumber: currentSetNum,
+          scoringTeamId,
+          actionType: auditAction,
+          scoreSnapshotA: updatedSet.teamAScore,
+          scoreSnapshotB: updatedSet.teamBScore,
+        },
+      }),
+      prisma.match.update({
+        where: { id: match.id },
+        data: {
+          status: matchStatus,
+          winnerTeamId,
+          courtSideSwitched,
+          currentSet: nextSetNum,
+          endTime: matchEndTime,
+          ...(startTimeCheck(match.startTime, matchStatus)),
+          ...(timerRemainingSeconds !== undefined && { timerRemainingSeconds }),
+          ...(timerIsRunning !== undefined && { timerIsRunning }),
+        },
+        include: {
+          teamA: { include: { player1: true, player2: true } },
+          teamB: { include: { player1: true, player2: true } },
+          winnerTeam: { include: { player1: true, player2: true } },
+          sets: { orderBy: { setNumber: 'asc' } },
+        },
+      }),
+    ]);
 
     // Real-time broadcast payload
     const payload = {
@@ -250,13 +246,25 @@ export async function POST(
       auditLog,
     };
 
-    // Low-latency broadcast via Redis Pub/Sub
+    // Immediate WebSocket/Redis broadcast (<1ms in-process fallback when no Redis)
     await publishEvent(CHANNELS.SCORE_UPDATE, payload);
 
     if (updatedMatch.status === MatchStatus.COMPLETED) {
-      advancePlayoffsForCategory(updatedMatch.category).catch((err) =>
-        console.error('[Auto Playoff Sync Error]:', err)
-      );
+      try {
+        await advancePlayoffsForCategory(updatedMatch.category);
+      } catch (err) {
+        console.error('[Auto Playoff Sync Error]:', err);
+      }
+    }
+
+    if (match.status !== updatedMatch.status || updatedMatch.status === MatchStatus.COMPLETED) {
+      await publishEvent(CHANNELS.MATCH_STATUS, {
+        matchId: updatedMatch.id,
+        status: updatedMatch.status,
+        category: updatedMatch.category,
+        winnerTeamId: updatedMatch.winnerTeamId,
+        courtNumber: updatedMatch.courtNumber,
+      });
     }
 
     return NextResponse.json({

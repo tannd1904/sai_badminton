@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
-import { redisSub, CHANNELS } from './src/lib/redis';
+import { redisSub, redisPub, CHANNELS, CHANNEL_TO_SOCKET_EVENT, hasRedisConfigured } from './src/lib/redis';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -34,53 +34,48 @@ async function bootstrap() {
     transports: ['websocket', 'polling'],
   });
 
-  // Connect and subscribe to Redis channels for cross-instance pub/sub
-  try {
-    if (redisSub.status !== 'ready' && redisSub.status !== 'connecting') {
-      await redisSub.connect();
-    }
-    
-    await redisSub.subscribe(
-      CHANNELS.SCORE_UPDATE,
-      CHANNELS.MATCH_STATUS,
-      CHANNELS.TIMER_UPDATE,
-      CHANNELS.SCHEDULE_UPDATE,
-      CHANNELS.ANNOUNCEMENT,
-      (err, count) => {
-        if (err) {
-          console.warn('[Redis Subscriber] Subscription error:', err);
-        } else {
-          console.log(`[Redis Subscriber] Successfully subscribed to ${count} channels.`);
-        }
-      }
-    );
+  // Expose Socket.IO instance on globalThis for zero-hop in-process emissions from Next API routes
+  (globalThis as { __saiSocketIO?: SocketIOServer }).__saiSocketIO = io;
+
+  // Connect and subscribe to Redis channels only when REDIS_URL is configured
+  if (hasRedisConfigured) {
+    Promise.all([
+      redisSub.status !== 'ready' && redisSub.status !== 'connecting' ? redisSub.connect() : Promise.resolve(),
+      redisPub.status !== 'ready' && redisPub.status !== 'connecting' ? redisPub.connect() : Promise.resolve(),
+    ])
+      .then(() =>
+        redisSub.subscribe(
+          CHANNELS.SCORE_UPDATE,
+          CHANNELS.MATCH_STATUS,
+          CHANNELS.TIMER_UPDATE,
+          CHANNELS.SCHEDULE_UPDATE,
+          CHANNELS.ANNOUNCEMENT,
+          (err, count) => {
+            if (err) {
+              console.warn('[Redis Subscriber] Subscription error:', err);
+            } else {
+              console.log(`[Redis Subscriber] Subscribed to ${count} channels.`);
+            }
+          }
+        )
+      )
+      .catch((err: Error) => {
+        console.warn('[Redis Warning] Operating with local Socket.IO fallback:', err.message);
+      });
 
     redisSub.on('message', (channel, message) => {
       try {
         const data = JSON.parse(message);
-        switch (channel) {
-          case CHANNELS.SCORE_UPDATE:
-            io.emit('score_update', data);
-            break;
-          case CHANNELS.MATCH_STATUS:
-            io.emit('match_status_change', data);
-            break;
-          case CHANNELS.TIMER_UPDATE:
-            io.emit('timer_update', data);
-            break;
-          case CHANNELS.SCHEDULE_UPDATE:
-            io.emit('schedule_update', data);
-            break;
-          case CHANNELS.ANNOUNCEMENT:
-            io.emit('announcement', data);
-            break;
+        const socketEvent = CHANNEL_TO_SOCKET_EVENT[channel];
+        if (socketEvent) {
+          io.emit(socketEvent, data);
         }
       } catch (e) {
         console.error('Error decoding Redis message:', e);
       }
     });
-  } catch (err: any) {
-    console.warn('[Redis Warning] Could not connect to Redis Pub/Sub, operating in in-memory mode:', err.message);
+  } else {
+    console.log('[Socket.IO] In-memory real-time broadcast mode active (no REDIS_URL).');
   }
 
   // Socket.io connection events
