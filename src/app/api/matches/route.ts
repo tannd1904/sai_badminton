@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
           orderBy: { setNumber: 'asc' },
         },
       },
-      orderBy: [{ courtNumber: 'asc' }, { orderIndex: 'asc' }],
+      orderBy: [{ startTime: 'asc' }, { orderIndex: 'asc' }, { courtNumber: 'asc' }],
     });
 
     return NextResponse.json(matches);

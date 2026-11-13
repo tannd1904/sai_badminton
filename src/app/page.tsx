@@ -24,6 +24,7 @@ export default function HomePage() {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'XD' | 'MD'>('ALL');
+  const [courtFilter, setCourtFilter] = useState<'ALL' | 1 | 2 | 3>('ALL');
 
   const fetchMatches = useCallback(async () => {
     try {
@@ -76,10 +77,33 @@ export default function HomePage() {
     };
   }, [subscribeToScore, subscribeToMatchStatus, fetchMatches]);
 
+  // Sort matches chronologically (startTime asc, courtNumber asc, orderIndex asc)
+  const sortedMatches = [...matches].sort((a, b) => {
+    const tA = a.startTime ? new Date(a.startTime).getTime() : 0;
+    const tB = b.startTime ? new Date(b.startTime).getTime() : 0;
+    if (tA !== tB) return tA - tB;
+    if (a.courtNumber !== b.courtNumber) return a.courtNumber - b.courtNumber;
+    return (a.orderIndex ?? 0) - (b.orderIndex ?? 0);
+  });
+
+  // Compute round slot number ("Lượt 1", "Lượt 2", ...) based on distinct group startTimes
+  const groupStartTimes = Array.from(
+    new Set(
+      sortedMatches
+        .filter((m) => m.roundType === 'GROUP' && m.startTime)
+        .map((m) => new Date(m.startTime!).getTime())
+    )
+  ).sort((a, b) => a - b);
+
   // Filter matches by category if requested
-  const filteredMatches = matches.filter((m) => {
+  const filteredMatches = sortedMatches.filter((m) => {
     if (categoryFilter === 'ALL') return true;
     return m.category === categoryFilter;
+  });
+
+  const tableMatches = filteredMatches.filter((m) => {
+    if (courtFilter === 'ALL') return true;
+    return m.courtNumber === courtFilter;
   });
 
   // For each court (1, 2, 3), find current active match and next match
@@ -214,18 +238,36 @@ export default function HomePage() {
 
       {/* All Scheduled & Recent Matches Stream */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-md">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h2 className="text-base font-extrabold text-white flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-sai-cyan" />
-            <span>Danh sách toàn bộ các trận đấu & Tiến trình thi đấu</span>
+            <span>Lịch Thi Đấu & Tiến Trình Các Trận Đấu</span>
           </h2>
-          <span className="text-xs text-slate-500 font-mono">{filteredMatches.length} trận đấu</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              {(['ALL', 1, 2, 3] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCourtFilter(c)}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    courtFilter === c
+                      ? 'bg-sai-cyan text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {c === 'ALL' ? 'Tất cả sân' : `Sân ${c}`}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-slate-500 font-mono">{tableMatches.length} trận đấu</span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold">
+                <th className="py-2.5 px-3">Giờ / Lượt</th>
                 <th className="py-2.5 px-3">Mã Trận</th>
                 <th className="py-2.5 px-3">Sân</th>
                 <th className="py-2.5 px-3">Nội Dung</th>
@@ -238,13 +280,40 @@ export default function HomePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
-              {filteredMatches.map((m) => {
+              {tableMatches.map((m) => {
                 const s1 = m.sets[0];
+                const luotIdx =
+                  m.roundType === 'GROUP' && m.startTime
+                    ? groupStartTimes.indexOf(new Date(m.startTime).getTime()) + 1
+                    : 0;
+                const timeDisplay = m.startTime
+                  ? new Date(m.startTime).toLocaleTimeString('vi-VN', {
+                      timeZone: 'Asia/Ho_Chi_Minh',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : '--:--';
                 return (
                   <tr key={m.id} className="hover:bg-slate-800/40 transition">
+                    <td className="py-2.5 px-3">
+                      <div className="font-mono font-bold text-white">{timeDisplay}</div>
+                      {luotIdx > 0 && (
+                        <span className="inline-block rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-sai-yellow mt-0.5">
+                          Lượt {luotIdx}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-3 font-mono font-bold text-white">{m.matchCode}</td>
                     <td className="py-2.5 px-3">
-                      <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] font-bold text-sai-cyan">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${
+                          m.courtNumber === 1
+                            ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-800/50'
+                            : m.courtNumber === 2
+                            ? 'bg-amber-950/70 text-amber-300 border border-amber-800/50'
+                            : 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/50'
+                        }`}
+                      >
                         Sân {m.courtNumber}
                       </span>
                     </td>
