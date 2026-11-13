@@ -720,12 +720,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6">
       {/* Title & Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 sm:mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-            <Shield className="h-7 w-7 text-sai-cyan" />
+          <h1 className="text-xl sm:text-3xl font-black text-white flex items-center gap-2 sm:gap-2.5">
+            <Shield className="h-6 w-6 sm:h-7 sm:w-7 shrink-0 text-sai-cyan" />
             <span>Tournament Operations Control Center</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -733,10 +733,10 @@ export default function AdminPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:flex-wrap w-full lg:w-auto">
           <button
             onClick={() => window.open('/api/export?format=csv', '_blank')}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5 sm:px-3.5 sm:py-2 text-xs font-bold text-slate-300 hover:text-white transition"
             title="Xuất file CSV danh sách kết quả trận đấu"
           >
             <Download className="h-4 w-4 text-sai-cyan" />
@@ -745,7 +745,7 @@ export default function AdminPage() {
 
           <button
             onClick={() => handleAdvancePlayoffs('XD')}
-            className="flex items-center gap-1.5 rounded-xl border border-indigo-900/60 bg-indigo-950/40 px-3 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-900/60 transition"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-900/60 bg-indigo-950/40 px-3 py-2.5 sm:py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-900/60 transition"
             title="Tự động xếp cặp Bán kết Đôi Nam Nữ từ BXH Bảng A & B"
           >
             <Trophy className="h-4 w-4 text-sai-cyan" />
@@ -754,7 +754,7 @@ export default function AdminPage() {
 
           <button
             onClick={() => handleAdvancePlayoffs('MD')}
-            className="flex items-center gap-1.5 rounded-xl border border-amber-900/60 bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-900/60 transition"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-900/60 bg-amber-950/40 px-3 py-2.5 sm:py-2 text-xs font-bold text-amber-300 hover:bg-amber-900/60 transition"
             title="Tự động xếp cặp Bán kết Đôi Nam từ BXH Bảng A & B"
           >
             <Trophy className="h-4 w-4 text-sai-yellow" />
@@ -764,7 +764,7 @@ export default function AdminPage() {
           <button
             onClick={() => fetchScheduleAndConflicts()}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition disabled:opacity-60"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5 sm:px-3.5 sm:py-2 text-xs font-bold text-slate-300 hover:text-white transition disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin text-sai-cyan' : ''}`} />
             <span>{isRefreshing ? 'Đang làm mới...' : 'Làm mới'}</span>
@@ -772,7 +772,7 @@ export default function AdminPage() {
 
           <button
             onClick={handleResetTournament}
-            className="flex items-center gap-1.5 rounded-xl border border-rose-900/50 bg-rose-950/40 px-3.5 py-2 text-xs font-bold text-rose-300 hover:bg-rose-900/60 transition"
+            className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 rounded-xl border border-rose-900/50 bg-rose-950/40 px-3.5 py-2.5 sm:py-2 text-xs font-bold text-rose-300 hover:bg-rose-900/60 transition"
           >
             <RotateCcw className="h-4 w-4" />
             <span>Đặt lại điểm</span>
@@ -834,7 +834,7 @@ export default function AdminPage() {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-6 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-5 sm:mb-6 overflow-x-auto no-scrollbar">
         {[
           { key: 'SCHEDULE', label: 'Sắp xếp Sân & Lịch đấu', icon: Calendar },
           { key: 'ATHLETES', label: 'Quản lý Vận động viên', icon: UserPlus },
@@ -848,7 +848,7 @@ export default function AdminPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 isActive
                   ? 'bg-sai-cyan text-slate-950 shadow-lg shadow-cyan-500/20'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
@@ -863,13 +863,13 @@ export default function AdminPage() {
 
       {/* TAB 1: SCHEDULE MANAGER & COURT CONFIGURATION */}
       {activeTab === 'SCHEDULE' && (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           {/* COURT CONFIGURATION & REBALANCE CARD */}
-          <div className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-sai-navy-950 p-5 shadow-xl backdrop-blur-md">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-sai-navy-950 p-4 sm:p-5 shadow-xl backdrop-blur-md">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <Sliders className="h-4 w-4 text-sai-cyan" />
+                  <Sliders className="h-4 w-4 text-sai-cyan shrink-0" />
                   <span>Cấu hình Sân thi đấu & Sắp xếp tự động</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 max-w-xl">
@@ -877,36 +877,36 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+                <div className="grid grid-cols-2 sm:flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
                   <button
                     onClick={() => handleRebalanceSchedule(2)}
                     disabled={isRebalancing}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-3 py-2 sm:px-4 rounded-xl text-xs font-bold transition-all text-center ${
                       activeCourtsCount === 2
                         ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    2 Sân (Court 1 & 2)
+                    2 Sân (1 & 2)
                   </button>
                   <button
                     onClick={() => handleRebalanceSchedule(3)}
                     disabled={isRebalancing}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-3 py-2 sm:px-4 rounded-xl text-xs font-bold transition-all text-center ${
                       activeCourtsCount === 3
                         ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    3 Sân (Court 1, 2 & 3)
+                    3 Sân (1, 2 & 3)
                   </button>
                 </div>
 
                 <button
                   onClick={() => handleRebalanceSchedule(activeCourtsCount)}
                   disabled={isRebalancing}
-                  className="flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-cyan-600 to-sai-cyan px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 hover:brightness-110 transition disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-cyan-600 to-sai-cyan px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 hover:brightness-110 transition disabled:opacity-50"
                 >
                   <Shuffle className={`h-4 w-4 ${isRebalancing ? 'animate-spin' : ''}`} />
                   <span>{isRebalancing ? 'Đang sắp xếp...' : 'Sắp xếp lại lịch đấu'}</span>
@@ -915,26 +915,26 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md space-y-4">
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-800 bg-slate-900/80 p-3.5 sm:p-5 backdrop-blur-md space-y-4">
             {/* Filter and Control Toolbar */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
               {/* Row 1: Court Filter Tabs */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800/80 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
                     <Filter className="h-3.5 w-3.5 text-sai-cyan" />
                     <span>Lọc Sân đấu:</span>
                   </span>
-                  <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                  <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
                     <button
                       onClick={() => setCourtFilter('ALL')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
                         courtFilter === 'ALL'
                           ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
-                      <span>Tất cả các sân</span>
+                      <span>Tất cả sân</span>
                       <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                         courtFilter === 'ALL' ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
                       }`}>
@@ -948,7 +948,7 @@ export default function AdminPage() {
                         <button
                           key={c}
                           onClick={() => setCourtFilter(c as any)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
                             courtFilter === c
                               ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                               : 'text-slate-400 hover:text-white'
@@ -968,59 +968,59 @@ export default function AdminPage() {
                 </div>
 
                 {/* Right Info: Total and sorting note */}
-                <div className="text-xs text-slate-400 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-sai-yellow" />
-                  <span>Sắp xếp tự động: <strong className="text-white">Thời gian tăng dần (08:30 → 17:00)</strong></span>
+                <div className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-sai-yellow shrink-0" />
+                  <span>Sắp xếp: <strong className="text-white">Thời gian tăng dần (08:30 → 17:00)</strong></span>
                 </div>
               </div>
 
               {/* Row 2: Category, Round filter & Search */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Category Filter */}
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto no-scrollbar max-w-full">
                     {(['ALL', 'XD', 'MD'] as const).map((cat) => (
                       <button
                         key={cat}
                         onClick={() => setScheduleCategoryFilter(cat)}
-                        className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                        className={`px-2.5 py-1.5 sm:py-1 rounded-lg font-bold transition-all shrink-0 ${
                           scheduleCategoryFilter === cat
                             ? 'bg-slate-800 text-white shadow'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {cat === 'ALL' ? 'Tất cả ND' : cat === 'XD' ? 'Đôi Nam Nữ (XD)' : 'Đôi Nam (MD)'}
+                        {cat === 'ALL' ? 'Tất cả ND' : cat === 'XD' ? 'XD (Nam Nữ)' : 'MD (Đôi Nam)'}
                       </button>
                     ))}
                   </div>
 
                   {/* Round Filter */}
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto no-scrollbar max-w-full">
                     {(['ALL', 'GROUP', 'PLAYOFF'] as const).map((rnd) => (
                       <button
                         key={rnd}
                         onClick={() => setScheduleRoundFilter(rnd)}
-                        className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                        className={`px-2.5 py-1.5 sm:py-1 rounded-lg font-bold transition-all shrink-0 ${
                           scheduleRoundFilter === rnd
                             ? 'bg-slate-800 text-white shadow'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {rnd === 'ALL' ? 'Tất cả vòng' : rnd === 'GROUP' ? 'Vòng Bảng' : 'Vòng Playoff'}
+                        {rnd === 'ALL' ? 'Tất cả vòng' : rnd === 'GROUP' ? 'Vòng Bảng' : 'Playoff'}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Search Box */}
-                <div className="relative min-w-[240px]">
+                <div className="relative w-full lg:w-auto lg:min-w-[240px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <input
                     type="text"
                     value={scheduleSearchQuery}
                     onChange={(e) => setScheduleSearchQuery(e.target.value)}
                     placeholder="Tìm mã trận, đội, tên VĐV..."
-                    className="w-full pl-9 pr-7 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sai-cyan"
+                    className="w-full pl-9 pr-7 py-2 sm:py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sai-cyan"
                   />
                   {scheduleSearchQuery && (
                     <button
@@ -1034,10 +1034,10 @@ export default function AdminPage() {
               </div>
 
               {/* Helpful Tips banner */}
-              <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className="text-sai-cyan font-bold">💡 Thao tác nhanh:</span>
-                  <span>Kéo thả hàng (hoặc bấm nút ▲ / ▼) để hoán đổi lịch. Có thể đổi trực tiếp Sân (Court 1, 2, 3) hoặc chỉnh giờ thi đấu. Nếu trùng lịch VĐV Pool 1, hệ thống sẽ hỏi xác nhận để bạn ép lưu theo ý muốn.</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400">
+                <span className="flex items-start sm:items-center gap-1.5">
+                  <span className="text-sai-cyan font-bold shrink-0">💡 Mẹo:</span>
+                  <span>Bấm nút ▲ / ▼ (hoặc kéo thả trên máy tính) để đổi thứ tự. Chọn trực tiếp Sân hoặc chỉnh giờ nhanh.</span>
                 </span>
                 <span className="shrink-0 font-bold text-slate-300">
                   Hiển thị: <strong className="text-sai-cyan">{sortedAndFilteredMatches.length}</strong> / {matches.length} trận
@@ -1045,8 +1045,152 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Interactive Schedule Table */}
-            <div className="overflow-x-auto">
+            {/* Mobile Touch Card View for iPhone/Phone */}
+            <div className="space-y-3 md:hidden">
+              {sortedAndFilteredMatches.map((m, idx) => {
+                const pool1A = m.teamA?.player1?.pool === 1 ? m.teamA.player1.name : null;
+                const pool1B = m.teamB?.player1?.pool === 1 ? m.teamB.player1.name : null;
+                const hasConflict = conflicts.some(
+                  (c) => c.matchA.id === m.id || c.matchB.id === m.id
+                );
+                const pool1Names = [pool1A, pool1B].filter(Boolean).join(', ');
+                return (
+                  <div
+                    key={m.id}
+                    className={`rounded-2xl border p-3.5 space-y-3 transition ${
+                      hasConflict
+                        ? 'bg-rose-950/35 border-rose-500/70'
+                        : 'bg-slate-950/85 border-slate-800'
+                    }`}
+                  >
+                    {/* Header Row: Index, Match Code, Category, Status, Reorder Buttons */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-mono text-[11px] font-black text-slate-400 bg-slate-900 border border-slate-800 rounded-lg px-2 py-0.5">
+                          #{idx + 1}
+                        </span>
+                        <span className="font-mono font-black text-white text-xs flex items-center gap-1">
+                          {m.matchCode}
+                          {hasConflict && <AlertTriangle className="h-3.5 w-3.5 text-rose-400" />}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                            m.category === 'XD'
+                              ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
+                              : 'bg-amber-950 text-amber-300 border border-amber-800/60'
+                          }`}
+                        >
+                          {m.category}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                            m.status === 'COMPLETED'
+                              ? 'bg-slate-800 text-slate-300'
+                              : m.status === 'IN_PROGRESS'
+                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50 animate-pulse'
+                              : 'bg-slate-900 text-slate-400'
+                          }`}
+                        >
+                          {m.status === 'COMPLETED' ? 'Đã xong' : m.status === 'IN_PROGRESS' ? 'Đang đấu' : 'Chờ'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleMoveStep(m.id, -1)}
+                          disabled={idx === 0}
+                          aria-label="Đẩy lên"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 active:scale-95 disabled:opacity-25"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleMoveStep(m.id, 1)}
+                          disabled={idx === sortedAndFilteredMatches.length - 1}
+                          aria-label="Đẩy xuống"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 active:scale-95 disabled:opacity-25"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Teams Matchup */}
+                    <div className="grid grid-cols-1 gap-1.5 rounded-xl bg-slate-900/70 border border-slate-800/80 p-2.5 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-white truncate">
+                          {m.teamA ? `${m.teamA.player1.name} & ${m.teamA.player2.name}` : 'Chờ kết quả BXH'}
+                        </span>
+                        <span className="shrink-0 rounded bg-sai-cyan/15 border border-sai-cyan/30 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sai-cyan">
+                          {m.teamA?.teamCode || 'TBD'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-slate-200 truncate">
+                          {m.teamB ? `${m.teamB.player1.name} & ${m.teamB.player2.name}` : 'Chờ kết quả BXH'}
+                        </span>
+                        <span className="shrink-0 rounded bg-sai-yellow/15 border border-sai-yellow/30 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sai-yellow">
+                          {m.teamB?.teamCode || 'TBD'}
+                        </span>
+                      </div>
+                      {pool1Names && (
+                        <div className="text-[10px] font-mono text-sai-yellow pt-1 border-t border-slate-800/70 truncate">
+                          Pool 1: {pool1Names}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Court + Time Controls */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={m.courtNumber}
+                        onChange={(e) => handleCourtChange(m.id, parseInt(e.target.value))}
+                        className={`w-full rounded-xl bg-slate-900 border px-2.5 py-2 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-cyan-500 ${
+                          m.courtNumber === 1
+                            ? 'text-cyan-300 border-cyan-800/60'
+                            : m.courtNumber === 2
+                            ? 'text-amber-300 border-amber-800/60'
+                            : 'text-emerald-300 border-emerald-800/60'
+                        }`}
+                      >
+                        <option value={1}>Sân 1 (Court 1)</option>
+                        <option value={2}>Sân 2 (Court 2)</option>
+                        <option value={3}>Sân 3 (Court 3)</option>
+                      </select>
+
+                      <input
+                        type="time"
+                        value={formatTimeForInput(m.startTime)}
+                        onChange={(e) => handleTimeChange(m.id, e.target.value)}
+                        className="w-full rounded-xl bg-slate-900 border border-slate-700 px-2.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-sai-cyan"
+                      />
+                    </div>
+
+                    {/* Quick Time Offset Touch Buttons */}
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[-15, -10, 10, 15].map((mins) => (
+                        <button
+                          key={mins}
+                          onClick={() => handleQuickOffset(m.id, mins)}
+                          className="rounded-xl border border-slate-800 bg-slate-900 py-2 text-xs font-bold text-slate-300 active:scale-95 hover:bg-slate-800"
+                        >
+                          {mins > 0 ? `+${mins}m` : `${mins}m`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {sortedAndFilteredMatches.length === 0 && (
+                <div className="py-8 text-center text-slate-500 text-xs">
+                  Không tìm thấy trận đấu nào phù hợp với bộ lọc hiện tại.
+                </div>
+              )}
+            </div>
+
+            {/* Interactive Schedule Table (Desktop) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
@@ -1294,16 +1438,16 @@ export default function AdminPage() {
 
       {/* TAB 2: ATHLETE ROSTER & MANAGEMENT */}
       {activeTab === 'ATHLETES' && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-4 rounded-3xl backdrop-blur-md">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Lọc theo nhóm:</span>
-              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 bg-slate-900/90 border border-slate-800 p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0">Lọc theo nhóm:</span>
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
                 {(['ALL', 1, 2, 3] as const).map((p) => (
                   <button
                     key={p}
                     onClick={() => setAthleteFilterPool(p)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                       athleteFilterPool === p
                         ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                         : 'text-slate-400 hover:text-white'
@@ -1312,30 +1456,30 @@ export default function AdminPage() {
                     {p === 'ALL'
                       ? 'Tất cả (' + players.length + ')'
                       : p === 1
-                      ? 'Pool 1 (Nam cao 70-100)'
+                      ? 'Pool 1 (Nam cao)'
                       : p === 2
-                      ? 'Pool 2 (Nam trung 50-60)'
-                      : 'Pool 3 (Nữ 40-45)'}
+                      ? 'Pool 2 (Nam trung)'
+                      : 'Pool 3 (Nữ)'}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+              <div className="relative flex-1 sm:flex-initial">
                 <Search className="h-4 w-4 text-slate-500 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Tìm tên vận động viên..."
                   value={athleteSearchQuery}
                   onChange={(e) => setAthleteSearchQuery(e.target.value)}
-                  className="rounded-xl bg-slate-950 border border-slate-800 pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sai-cyan"
+                  className="w-full sm:w-56 rounded-xl bg-slate-950 border border-slate-800 pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sai-cyan"
                 />
               </div>
 
               <button
                 onClick={() => setShowAddPlayerModal(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-sai-cyan text-slate-950 px-3.5 py-2 text-xs font-black shadow-md shadow-cyan-500/20 hover:brightness-110 transition"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-sai-cyan text-slate-950 px-3.5 py-2.5 sm:py-2 text-xs font-black shadow-md shadow-cyan-500/20 hover:brightness-110 transition shrink-0"
               >
                 <UserPlus className="h-4 w-4" />
                 <span>Bổ sung VĐV mới</span>
@@ -1343,9 +1487,63 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Athletes Table */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md">
-            <div className="overflow-x-auto">
+          {/* Athletes List & Table */}
+          <div className="rounded-2xl sm:rounded-3xl border border-slate-800 bg-slate-900/80 p-3.5 sm:p-5 backdrop-blur-md">
+            {/* Mobile Cards View */}
+            <div className="space-y-2.5 md:hidden">
+              {filteredAthletes.map((pl) => (
+                <div
+                  key={pl.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3.5 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="font-extrabold text-white text-sm truncate">{pl.name}</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${
+                          pl.gender === 'MALE'
+                            ? 'bg-blue-950/80 text-blue-300 border border-blue-800'
+                            : 'bg-pink-950/80 text-pink-300 border border-pink-800'
+                        }`}
+                      >
+                        {pl.gender === 'MALE' ? 'Nam' : 'Nữ'}
+                      </span>
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          pl.pool === 1
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : pl.pool === 2
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                            : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                        }`}
+                      >
+                        Pool {pl.pool}
+                      </span>
+                      <span className="text-[11px] text-slate-400 truncate">
+                        {pl.department || 'SAI Digital'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setEditingPlayer(pl);
+                      setEditPlayerName(pl.name);
+                      setEditPlayerGender(pl.gender as 'MALE' | 'FEMALE');
+                      setEditPlayerPool(pl.pool);
+                      setEditPlayerDept(pl.department || 'SAI Digital');
+                      setShowEditPlayerModal(true);
+                    }}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-xs text-sai-cyan hover:text-white font-bold transition"
+                  >
+                    <Edit className="h-3.5 w-3.5" />
+                    <span>Sửa</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
@@ -1429,17 +1627,17 @@ export default function AdminPage() {
 
       {/* TAB 3: TEAM PAIRING MANAGER */}
       {activeTab === 'PAIRS' && (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           {/* Category Filter for Pairs */}
-          <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 p-4 rounded-3xl backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Nội dung:</span>
-              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-900/90 border border-slate-800 p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0">Nội dung:</span>
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
                 {(['ALL', 'XD', 'MD'] as const).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setPairsCategoryFilter(cat)}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                       pairsCategoryFilter === cat
                         ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                         : 'text-slate-400 hover:text-white'
@@ -1448,13 +1646,13 @@ export default function AdminPage() {
                     {cat === 'ALL'
                       ? 'Tất cả 16 cặp'
                       : cat === 'XD'
-                      ? 'Đôi Nam Nữ (XD - 8 cặp)'
-                      : 'Đôi Nam (MD - 8 cặp)'}
+                      ? 'Đôi Nam Nữ (XD - 8)'
+                      : 'Đôi Nam (MD - 8)'}
                   </button>
                 ))}
               </div>
             </div>
-            <span className="text-xs text-slate-400">
+            <span className="text-[11px] sm:text-xs text-slate-400">
               Có thể sắp xếp hoặc đổi cặp bất kỳ lúc nào trước khi bắt đầu giải
             </span>
           </div>

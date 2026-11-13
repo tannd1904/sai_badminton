@@ -1,8 +1,14 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from '../components/providers';
 import { Navbar } from '../components/Navbar';
 import { AnnouncementBanner } from '../components/AnnouncementBanner';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: 'SAI Badminton Championship 2026 | Management System',
@@ -26,7 +32,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <AnnouncementBanner />
-            <main className="flex-1 pb-16">{children}</main>
+            <main className="flex-1 pb-24 md:pb-16">{children}</main>
             <footer className="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-500">
               <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <span>

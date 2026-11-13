@@ -393,16 +393,16 @@ export default function RefereePage() {
       : undefined;
 
   return (
-    <div className="mx-auto max-w-4xl px-3 sm:px-4 py-3 sm:py-6 select-none">
+    <div className="mx-auto max-w-4xl px-2.5 sm:px-4 py-3 sm:py-6 select-none">
       {/* Top Bar: Court Picker & Quick Match Selector */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 p-3 rounded-2xl mb-4 backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-slate-900/90 border border-slate-800 p-2.5 sm:p-3 rounded-2xl mb-3 sm:mb-4 backdrop-blur-md">
         {/* Court Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="grid grid-cols-3 sm:flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
           {[1, 2, 3].map((cNum) => (
             <button
               key={cNum}
               onClick={() => setSelectedCourt(cNum)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all text-center ${
                 selectedCourt === cNum
                   ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
                   : 'text-slate-400 hover:text-white'
@@ -414,7 +414,7 @@ export default function RefereePage() {
         </div>
 
         {/* Match selector dropdown */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <select
             value={activeMatch?.id || ''}
             onChange={(e) => {
@@ -429,7 +429,7 @@ export default function RefereePage() {
                 fetchMatchDetails(selected.id);
               }
             }}
-            className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-sai-cyan max-w-[320px] truncate"
+            className="flex-1 min-w-0 sm:max-w-[320px] rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 sm:py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-sai-cyan truncate"
           >
             {matches.map((m) => (
               <option key={m.id} value={m.id}>
@@ -440,7 +440,7 @@ export default function RefereePage() {
 
           <button
             onClick={() => setShowAuditDrawer(!showAuditDrawer)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
+            className="shrink-0 flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-xl sm:rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
             title={t('referee.auditLog')}
           >
             <History className="h-4 w-4" />
@@ -562,32 +562,32 @@ export default function RefereePage() {
           )}
 
           {/* MASSIVE TOUCH SCOREBOARD (Referee Main Canvas) */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             {/* LEFT TEAM TOUCH TARGET */}
-            <div className="flex flex-col rounded-3xl border-2 border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-sai-navy-950 p-4 shadow-2xl relative overflow-hidden">
-              <div className="flex items-center justify-between mb-2">
-                <span className="rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300">
+            <div className="flex flex-col rounded-2xl sm:rounded-3xl border-2 border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-sai-navy-950 p-2.5 sm:p-4 shadow-2xl relative overflow-hidden">
+              <div className="flex items-center justify-between gap-1 mb-2">
+                <span className="rounded-lg bg-slate-800 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-bold text-slate-300">
                   {isSwitched ? 'Sân Phải' : 'Sân Trái'}
                 </span>
                 {leftSetPoint ? (
-                  <span className="rounded-full bg-amber-500/20 border border-amber-400/50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse">
-                    {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? 'MATCH POINT' : 'GAME POINT'}
+                  <span className="rounded-full bg-amber-500/20 border border-amber-400/50 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse">
+                    {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? 'MATCH PT' : 'GAME PT'}
                   </span>
                 ) : (
-                  <span className="font-extrabold text-xs text-sai-cyan tracking-wider">
+                  <span className="font-extrabold text-[10px] sm:text-xs text-sai-cyan tracking-wider">
                     TEAM {leftTeamLetter}
                   </span>
                 )}
               </div>
 
               {/* Team Name and Players - Athlete Names Large & Prominent */}
-              <div className="text-center mb-3 min-h-[64px] flex flex-col justify-center">
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+              <div className="text-center mb-2.5 sm:mb-3 min-h-[54px] sm:min-h-[64px] flex flex-col justify-center">
+                <h3 className="text-sm sm:text-2xl font-black text-white leading-tight break-words">
                   <div>{leftTeam?.player1.name}</div>
                   <div className="text-slate-300 font-bold">{leftTeam?.player2.name}</div>
                 </h3>
-                <div className="mt-1.5 flex items-center justify-center">
-                  <span className="rounded-full bg-sai-cyan/20 border border-sai-cyan/40 px-2.5 py-0.5 text-xs font-mono font-black text-sai-cyan">
+                <div className="mt-1 sm:mt-1.5 flex items-center justify-center">
+                  <span className="rounded-full bg-sai-cyan/20 border border-sai-cyan/40 px-2 py-0.5 text-[10px] sm:text-xs font-mono font-black text-sai-cyan">
                     {leftTeam?.teamCode}
                   </span>
                 </div>
@@ -597,18 +597,18 @@ export default function RefereePage() {
               <button
                 onClick={() => mutateScore('ADD_POINT', leftTeamLetter)}
                 disabled={isMatchCompleted}
-                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-sai-cyan py-10 sm:py-14 text-white shadow-xl shadow-cyan-500/20 active:scale-95 transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
+                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-sai-cyan py-8 sm:py-14 text-white shadow-xl shadow-cyan-500/20 active:scale-95 transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
               >
-                <span className="text-6xl sm:text-8xl font-black tracking-tight font-mono drop-shadow-md">
+                <span className="text-5xl sm:text-8xl font-black tracking-tight font-mono drop-shadow-md">
                   {leftScore}
                 </span>
-                <span className="mt-2 text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-3 py-1 rounded-full group-hover:scale-105 transition-transform">
+                <span className="mt-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full group-hover:scale-105 transition-transform">
                   {isMatchCompleted ? 'ĐÃ KẾT THÚC' : '+1 ĐIỂM'}
                 </span>
               </button>
 
               {/* Individual Undo for Left Team */}
-              <div className="mt-3 flex justify-center">
+              <div className="mt-2.5 sm:mt-3 flex justify-center">
                 <button
                   onClick={() => mutateScore('SUBTRACT_POINT', leftTeamLetter)}
                   disabled={leftScore <= 0}
@@ -621,30 +621,30 @@ export default function RefereePage() {
             </div>
 
             {/* RIGHT TEAM TOUCH TARGET */}
-            <div className="flex flex-col rounded-3xl border-2 border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-sai-navy-950 p-4 shadow-2xl relative overflow-hidden">
-              <div className="flex items-center justify-between mb-2">
-                <span className="rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300">
+            <div className="flex flex-col rounded-2xl sm:rounded-3xl border-2 border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-sai-navy-950 p-2.5 sm:p-4 shadow-2xl relative overflow-hidden">
+              <div className="flex items-center justify-between gap-1 mb-2">
+                <span className="rounded-lg bg-slate-800 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-bold text-slate-300">
                   {isSwitched ? 'Sân Trái' : 'Sân Phải'}
                 </span>
                 {rightSetPoint ? (
-                  <span className="rounded-full bg-amber-500/20 border border-amber-400/50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse">
-                    {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? 'MATCH POINT' : 'GAME POINT'}
+                  <span className="rounded-full bg-amber-500/20 border border-amber-400/50 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-300 animate-pulse">
+                    {activeMatch.rulesMode === 'SINGLE_SET_10MIN' ? 'MATCH PT' : 'GAME PT'}
                   </span>
                 ) : (
-                  <span className="font-extrabold text-xs text-sai-yellow tracking-wider">
+                  <span className="font-extrabold text-[10px] sm:text-xs text-sai-yellow tracking-wider">
                     TEAM {rightTeamLetter}
                   </span>
                 )}
               </div>
 
               {/* Team Name and Players - Athlete Names Large & Prominent */}
-              <div className="text-center mb-3 min-h-[64px] flex flex-col justify-center">
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+              <div className="text-center mb-2.5 sm:mb-3 min-h-[54px] sm:min-h-[64px] flex flex-col justify-center">
+                <h3 className="text-sm sm:text-2xl font-black text-white leading-tight break-words">
                   <div>{rightTeam?.player1.name}</div>
                   <div className="text-slate-300 font-bold">{rightTeam?.player2.name}</div>
                 </h3>
-                <div className="mt-1.5 flex items-center justify-center">
-                  <span className="rounded-full bg-sai-yellow/20 border border-sai-yellow/40 px-2.5 py-0.5 text-xs font-mono font-black text-sai-yellow">
+                <div className="mt-1 sm:mt-1.5 flex items-center justify-center">
+                  <span className="rounded-full bg-sai-yellow/20 border border-sai-yellow/40 px-2 py-0.5 text-[10px] sm:text-xs font-mono font-black text-sai-yellow">
                     {rightTeam?.teamCode}
                   </span>
                 </div>
@@ -654,18 +654,18 @@ export default function RefereePage() {
               <button
                 onClick={() => mutateScore('ADD_POINT', rightTeamLetter)}
                 disabled={isMatchCompleted}
-                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 to-sai-yellow py-10 sm:py-14 text-white shadow-xl shadow-yellow-500/20 active:scale-95 transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
+                className="group relative flex-1 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 to-sai-yellow py-8 sm:py-14 text-white shadow-xl shadow-yellow-500/20 active:scale-95 transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
               >
-                <span className="text-6xl sm:text-8xl font-black tracking-tight font-mono drop-shadow-md text-slate-950">
+                <span className="text-5xl sm:text-8xl font-black tracking-tight font-mono drop-shadow-md text-slate-950">
                   {rightScore}
                 </span>
-                <span className="mt-2 text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-3 py-1 rounded-full group-hover:scale-105 transition-transform">
+                <span className="mt-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-950 bg-white/80 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full group-hover:scale-105 transition-transform">
                   {isMatchCompleted ? 'ĐÃ KẾT THÚC' : '+1 ĐIỂM'}
                 </span>
               </button>
 
               {/* Individual Undo for Right Team */}
-              <div className="mt-3 flex justify-center">
+              <div className="mt-2.5 sm:mt-3 flex justify-center">
                 <button
                   onClick={() => mutateScore('SUBTRACT_POINT', rightTeamLetter)}
                   disabled={rightScore <= 0}
@@ -679,31 +679,31 @@ export default function RefereePage() {
           </div>
 
           {/* UMPIRE ACTION CONTROLS */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {/* Global Undo Button */}
             <button
               onClick={() => mutateScore('UNDO')}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-98 shadow"
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-2xl border border-slate-800 bg-slate-900 py-2.5 sm:py-3.5 px-2 sm:px-4 font-bold text-[10px] sm:text-xs uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-95 shadow text-center"
             >
-              <RotateCcw className="h-4 w-4 text-rose-400" />
+              <RotateCcw className="h-4 w-4 text-rose-400 shrink-0" />
               <span>{t('referee.instantUndo')}</span>
             </button>
 
             {/* Switch Court Side Button */}
             <button
               onClick={() => mutateScore('SWITCH_COURT')}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-98 shadow"
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-2xl border border-slate-800 bg-slate-900 py-2.5 sm:py-3.5 px-2 sm:px-4 font-bold text-[10px] sm:text-xs uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800 transition active:scale-95 shadow text-center"
             >
-              <ArrowLeftRight className="h-4 w-4 text-sai-cyan" />
+              <ArrowLeftRight className="h-4 w-4 text-sai-cyan shrink-0" />
               <span>{t('referee.switchCourt')}</span>
             </button>
 
             {/* End Set / End Match Button */}
             <button
               onClick={() => setShowEndMatchModal(true)}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-slate-950 hover:brightness-110 transition active:scale-98 shadow-lg shadow-emerald-500/20"
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 py-2.5 sm:py-3.5 px-2 sm:px-4 font-bold text-[10px] sm:text-xs uppercase tracking-wider text-slate-950 hover:brightness-110 transition active:scale-95 shadow-lg shadow-emerald-500/20 text-center"
             >
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 shrink-0" />
               <span>{t('referee.finishMatch')}</span>
             </button>
           </div>

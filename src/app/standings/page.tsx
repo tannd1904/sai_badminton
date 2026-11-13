@@ -282,14 +282,14 @@ export default function StandingsPage() {
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold text-[10px]">
-              <th className="py-2.5 px-2 text-center">{t('standings.table.pos')}</th>
-              <th className="py-2.5 px-3">{t('standings.table.team')}</th>
-              <th className="py-2.5 px-2 text-center">{t('standings.table.played')}</th>
-              <th className="py-2.5 px-2 text-center">{t('standings.table.won')}</th>
-              <th className="py-2.5 px-2 text-center">{t('standings.table.lost')}</th>
-              <th className="py-2.5 px-2 text-center">{t('standings.table.setDiff')}</th>
-              <th className="py-2.5 px-2 text-center">{t('standings.table.ptDiff')}</th>
-              <th className="py-2.5 px-3 text-center font-black text-sai-cyan">{t('standings.table.points')}</th>
+              <th className="py-2 px-1.5 sm:px-2 text-center">{t('standings.table.pos')}</th>
+              <th className="py-2 px-2 sm:px-3">{t('standings.table.team')}</th>
+              <th className="py-2 px-1.5 sm:px-2 text-center">{t('standings.table.played')}</th>
+              <th className="py-2 px-1.5 sm:px-2 text-center">{t('standings.table.won')}</th>
+              <th className="py-2 px-1.5 sm:px-2 text-center">{t('standings.table.lost')}</th>
+              <th className="py-2 px-1.5 sm:px-2 text-center">{t('standings.table.setDiff')}</th>
+              <th className="py-2 px-1.5 sm:px-2 text-center">{t('standings.table.ptDiff')}</th>
+              <th className="py-2 px-2 sm:px-3 text-center font-black text-sai-cyan">{t('standings.table.points')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -304,9 +304,9 @@ export default function StandingsPage() {
                       : 'hover:bg-slate-800/40'
                   }`}
                 >
-                  <td className="py-3 px-2 text-center font-bold">
+                  <td className="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center font-bold">
                     <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
+                      className={`inline-flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full text-[11px] sm:text-xs font-black ${
                         idx === 0
                           ? 'bg-sai-yellow text-slate-950 shadow-sm shadow-yellow-500/30'
                           : idx === 1
@@ -317,28 +317,28 @@ export default function StandingsPage() {
                       {item.rank || idx + 1}
                     </span>
                   </td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-2 mb-0.5">
+                  <td className="py-2.5 sm:py-3 px-2 sm:px-3">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-0.5">
                       {/* Prominent Player Names */}
-                      <span className="font-black text-white text-sm">
+                      <span className="font-black text-white text-xs sm:text-sm leading-snug">
                         {item.player1Name} & {item.player2Name}
                       </span>
                       {/* Secondary Team Code Badge */}
-                      <span className="rounded bg-slate-800 border border-slate-700/80 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
+                      <span className="rounded bg-slate-800 border border-slate-700/80 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold text-sai-cyan">
                         {item.teamCode}
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 px-2 text-center text-slate-300">{item.played}</td>
-                  <td className="py-3 px-2 text-center text-emerald-400 font-bold">{item.won}</td>
-                  <td className="py-3 px-2 text-center text-rose-400">{item.lost}</td>
-                  <td className="py-3 px-2 text-center font-mono font-semibold">
+                  <td className="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center text-slate-300">{item.played}</td>
+                  <td className="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center text-emerald-400 font-bold">{item.won}</td>
+                  <td className="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center text-rose-400">{item.lost}</td>
+                  <td className="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center font-mono font-semibold">
                     {item.setDiff > 0 ? `+${item.setDiff}` : item.setDiff}
                   </td>
-                  <td className="py-3 px-2 text-center font-mono text-slate-400">
+                  <td className="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center font-mono text-slate-400">
                     {item.pointDiff > 0 ? `+${item.pointDiff}` : item.pointDiff}
                   </td>
-                  <td className="py-3 px-3 text-center font-mono font-black text-base text-sai-cyan">
+                  <td className="py-2.5 sm:py-3 px-2 sm:px-3 text-center font-mono font-black text-sm sm:text-base text-sai-cyan">
                     {item.points}
                   </td>
                 </tr>
@@ -493,12 +493,12 @@ export default function StandingsPage() {
       </div>
 
       {/* SECTION 3: SƠ ĐỒ VÒNG LOẠI TRỰC TIẾP (KNOCKOUT TREE) */}
-      <div className="rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 to-sai-navy-950/90 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
-        <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 to-sai-navy-950/90 p-4 sm:p-8 shadow-2xl backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-6 sm:mb-8 border-b border-slate-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <GitBranch className="h-5 w-5 text-sai-cyan" />
-              <h2 className="text-xl font-black text-white">
+              <GitBranch className="h-5 w-5 text-sai-cyan shrink-0" />
+              <h2 className="text-lg sm:text-xl font-black text-white">
                 3. Vòng Playoff Loại Trực Tiếp {activeTab} (Best of 3 Sets)
               </h2>
             </div>
@@ -506,7 +506,7 @@ export default function StandingsPage() {
               Đội Nhất và Nhì của 2 bảng đấu chéo vào Bán kết (A1 vs B2, B1 vs A2), Tranh Hạng Ba và Chung Kết
             </p>
           </div>
-          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+          <span className="self-start sm:self-auto shrink-0 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
             BO3 Luật 21 điểm chuẩn
           </span>
         </div>

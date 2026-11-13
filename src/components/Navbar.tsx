@@ -54,124 +54,126 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800 bg-sai-navy-950/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sai-cyan to-blue-600 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              <span className="text-xl">🏸</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold tracking-wider text-white text-lg">SAI DIGITAL</span>
-                <span className="rounded bg-sai-cyan/20 px-2 py-0.5 text-[10px] font-bold text-sai-cyan uppercase">
-                  2026
-                </span>
+    <>
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-sai-navy-950/95 backdrop-blur-md pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
+          {/* Brand */}
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/" className="flex items-center gap-2 group min-w-0">
+              <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sai-cyan to-blue-600 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+                <span className="text-lg sm:text-xl">🏸</span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">{t('nav.subTitle')}</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={true}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Right side controls */}
-        <div className="flex items-center gap-2.5">
-          {/* Connection & Latency status */}
-          <div
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border ${
-              isConnected
-                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400'
-                : 'bg-rose-950/40 border-rose-500/40 text-rose-400'
-            }`}
-            title={isConnected ? 'Connected to Redis/Socket.io' : 'Disconnected from real-time stream'}
-          >
-            {isConnected ? (
-              <>
-                <Wifi className="h-3 w-3 animate-pulse text-emerald-400" />
-                <span>{latency ? `${latency}ms` : 'LIVE'}</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="h-3 w-3 text-rose-400" />
-                <span>OFFLINE</span>
-              </>
-            )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="font-extrabold tracking-wider text-white text-sm sm:text-lg truncate">SAI DIGITAL</span>
+                  <span className="rounded bg-sai-cyan/20 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-sai-cyan uppercase shrink-0">
+                    2026
+                  </span>
+                </div>
+                <p className="hidden sm:block text-[11px] text-slate-400 font-medium truncate">{t('nav.subTitle')}</p>
+              </div>
+            </Link>
           </div>
 
-          {/* Language Switcher */}
-          <button
-            onClick={toggleLocale}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-colors text-xs font-bold"
-            title={locale === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
-          >
-            <Globe className="h-3.5 w-3.5 text-sai-cyan" />
-            <span>{locale === 'vi' ? '🇻🇳 VN' : '🇬🇧 EN'}</span>
-          </button>
+          {/* Navigation Links (Desktop) */}
+          <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch={true}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-sai-cyan text-slate-950 shadow-md shadow-cyan-500/20'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-          {/* Sound toggle */}
-          <button
-            onClick={toggleSound}
-            aria-label={soundOn ? t('nav.soundOff') : t('nav.soundOn')}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-colors"
-          >
-            {soundOn ? <Volume2 className="h-4 w-4 text-sai-cyan" /> : <VolumeX className="h-4 w-4 text-slate-500" />}
-          </button>
-
-          {/* User Profile / Auth */}
-          {session ? (
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-              <div className="hidden lg:block text-right">
-                <p className="text-xs font-semibold text-white truncate max-w-[120px]">{session.user?.name}</p>
-                <span className="inline-block rounded bg-sai-cyan/15 px-1.5 py-0.2 text-[9px] font-bold text-sai-cyan uppercase">
-                  {role || 'USER'}
-                </span>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                title={t('nav.logout')}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-rose-400 hover:border-rose-900/50 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              prefetch={true}
-              className="flex items-center gap-1.5 rounded-lg bg-sai-navy-800 hover:bg-sai-navy-700 border border-slate-700 px-3 py-1.5 text-xs font-semibold text-white transition-all shadow"
+          {/* Right side controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Connection & Latency status (compact on iPhone, full on >=sm) */}
+            <div
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border ${
+                isConnected
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400'
+                  : 'bg-rose-950/40 border-rose-500/40 text-rose-400'
+              }`}
+              title={isConnected ? 'Connected to Socket.io' : 'Disconnected from real-time stream'}
             >
-              <LogIn className="h-3.5 w-3.5 text-sai-yellow" />
-              <span>{t('nav.login')}</span>
-            </Link>
-          )}
-        </div>
-      </div>
+              {isConnected ? (
+                <>
+                  <Wifi className="h-3 w-3 animate-pulse text-emerald-400" />
+                  <span>{latency ? `${latency}ms` : 'LIVE'}</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3 w-3 text-rose-400" />
+                  <span className="hidden sm:inline">OFFLINE</span>
+                </>
+              )}
+            </div>
 
-      {/* Mobile nav bar */}
-      <div className="flex md:hidden border-t border-slate-800/80 bg-slate-950/60 px-2 py-1.5 justify-around">
+            {/* Language Switcher */}
+            <button
+              onClick={toggleLocale}
+              className="flex h-9 items-center gap-1 px-2 sm:px-2.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-colors text-xs font-bold"
+              title={locale === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+            >
+              <Globe className="h-3.5 w-3.5 text-sai-cyan" />
+              <span>{locale === 'vi' ? 'VN' : 'EN'}</span>
+            </button>
+
+            {/* Sound toggle */}
+            <button
+              onClick={toggleSound}
+              aria-label={soundOn ? t('nav.soundOff') : t('nav.soundOn')}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-700 transition-colors"
+            >
+              {soundOn ? <Volume2 className="h-4 w-4 text-sai-cyan" /> : <VolumeX className="h-4 w-4 text-slate-500" />}
+            </button>
+
+            {/* User Profile / Auth */}
+            {session ? (
+              <div className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 border-l border-slate-800">
+                <div className="hidden lg:block text-right">
+                  <p className="text-xs font-semibold text-white truncate max-w-[120px]">{session.user?.name}</p>
+                  <span className="inline-block rounded bg-sai-cyan/15 px-1.5 py-0.2 text-[9px] font-bold text-sai-cyan uppercase">
+                    {role || 'USER'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  title={t('nav.logout')}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-rose-400 hover:border-rose-900/50 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                prefetch={true}
+                className="flex h-9 items-center gap-1.5 rounded-lg bg-sai-navy-800 hover:bg-sai-navy-700 border border-slate-700 px-2.5 sm:px-3 text-xs font-semibold text-white transition-all shadow"
+              >
+                <LogIn className="h-3.5 w-3.5 text-sai-yellow" />
+                <span className="hidden xs:inline sm:inline">{t('nav.login')}</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* iPhone / Mobile Fixed Bottom Tab Bar */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex md:hidden border-t border-slate-800 bg-sai-navy-950/95 backdrop-blur-lg px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] justify-around shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -180,17 +182,19 @@ export function Navbar() {
               key={item.href}
               href={item.href}
               prefetch={true}
-              className={`flex flex-col items-center gap-1 px-3 py-1 rounded-md text-[10px] font-medium ${
-                isActive ? 'text-sai-cyan font-bold' : 'text-slate-400 hover:text-slate-200'
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl text-[10px] leading-tight transition-colors ${
+                isActive
+                  ? 'text-sai-cyan font-extrabold bg-sai-cyan/10'
+                  : 'text-slate-400 font-medium hover:text-slate-200'
               }`}
             >
-              <Icon className="h-4 w-4" />
-              <span>{item.label}</span>
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate max-w-[74px] text-center">{item.label}</span>
             </Link>
           );
         })}
-      </div>
-    </header>
+      </nav>
+    </>
   );
 }
 
