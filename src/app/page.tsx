@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import { useLanguage } from '../lib/i18n';
 import { getPlayoffSlotInfo } from '../lib/playoff-utils';
+import { PageLoader } from '../components/PageLoader';
 
 export default function HomePage() {
   const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect } = useSocket();
@@ -145,6 +146,19 @@ export default function HomePage() {
   // Dynamically resolve active courts from current schedule (supports 2 courts or 3 courts)
   const courtNumbers = Array.from(new Set(matches.map((m) => m.courtNumber))).sort((a, b) => a - b);
   const activeCourtsList = courtNumbers.length > 0 ? courtNumbers : [1, 2, 3];
+
+  if (loading) {
+    return (
+      <PageLoader
+        title={locale === 'vi' ? 'Đang tải Trực Tiếp Sân & Lịch Thi Đấu...' : 'Loading Live Courts & Match Schedule...'}
+        subtitle={
+          locale === 'vi'
+            ? 'Đang đồng bộ điểm số trực tiếp trên các sân và danh sách cặp đấu...'
+            : 'Syncing live court scores and tournament schedule...'
+        }
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">

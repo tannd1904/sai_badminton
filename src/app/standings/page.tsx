@@ -5,6 +5,7 @@ import { useSocket } from '../../lib/socket-client';
 import { Trophy, Medal, Award, Flame, ChevronRight, RefreshCw, GitBranch, Users } from 'lucide-react';
 import { GroupStandingItem, MatchData, TeamData } from '../../types';
 import { useLanguage } from '../../lib/i18n';
+import { PageLoader } from '../../components/PageLoader';
 
 export default function StandingsPage() {
   const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect } = useSocket();
@@ -348,6 +349,19 @@ export default function StandingsPage() {
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <PageLoader
+        title={locale === 'vi' ? 'Đang tải Bảng Xếp Hạng & Nhánh Đấu...' : 'Loading Standings & Playoff Brackets...'}
+        subtitle={
+          locale === 'vi'
+            ? 'Đang tổng hợp điểm số vòng bảng, hiệu số và sơ đồ Playoff...'
+            : 'Calculating group standings, point diffs, and playoff brackets...'
+        }
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">

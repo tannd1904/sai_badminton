@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSocket } from '../../lib/socket-client';
+import { PageLoader } from '../../components/PageLoader';
 import {
   Calendar,
   AlertTriangle,
@@ -42,6 +43,8 @@ export default function AdminPage() {
   const [teams, setTeams] = useState<TeamData[]>([]);
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Court Configuration & Rebalancing state
@@ -130,7 +133,11 @@ export default function AdminPage() {
 
   const fetchScheduleAndConflicts = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!hasLoadedOnceRef.current) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       const [schedRes, teamRes] = await Promise.all([
         fetch('/api/schedule'),
         fetch('/api/teams'),
@@ -153,7 +160,9 @@ export default function AdminPage() {
     } catch (e) {
       console.error(e);
     } finally {
+      hasLoadedOnceRef.current = true;
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [selectedOverrideMatchId, loadMatchIntoOverrideForm]);
 
@@ -701,6 +710,15 @@ export default function AdminPage() {
     return matchPool && matchSearch;
   });
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Đang tải Trung tâm Điều hành Giải đấu..."
+        subtitle="Đang đồng bộ danh sách trận đấu, VĐV, cặp đấu và kiểm tra trùng lịch sân..."
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       {/* Title & Banner */}
@@ -745,10 +763,11 @@ export default function AdminPage() {
 
           <button
             onClick={() => fetchScheduleAndConflicts()}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition"
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition disabled:opacity-60"
           >
-            <RefreshCw className="h-4 w-4" />
-            <span>Làm mới</span>
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin text-sai-cyan' : ''}`} />
+            <span>{isRefreshing ? 'Đang làm mới...' : 'Làm mới'}</span>
           </button>
 
           <button

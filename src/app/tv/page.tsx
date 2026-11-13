@@ -6,12 +6,14 @@ import { MatchData } from '../../types';
 import { Maximize2, Minimize2, Tv, Clock, Trophy } from 'lucide-react';
 import { useLanguage } from '../../lib/i18n';
 import { getPlayoffSlotInfo } from '../../lib/playoff-utils';
+import { PageLoader } from '../../components/PageLoader';
 
 export default function TVScoreboardPage() {
   const { t, locale } = useLanguage();
   const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect } = useSocket();
   const [selectedCourt, setSelectedCourt] = useState<number | 'ALL'>('ALL');
   const [matches, setMatches] = useState<MatchData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const fetchMatches = useCallback(async () => {
@@ -23,6 +25,8 @@ export default function TVScoreboardPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -259,6 +263,19 @@ export default function TVScoreboardPage() {
       </div>
     );
   };
+
+  if (loading) {
+    return (
+      <PageLoader
+        title={locale === 'vi' ? 'Đang tải Màn Hình TV Trực Tiếp...' : 'Loading TV Live Scoreboard...'}
+        subtitle={
+          locale === 'vi'
+            ? 'Đang kết nối luồng điểm số trực tiếp cho các sân...'
+            : 'Connecting live court scoreboard stream...'
+        }
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 p-4 sm:p-8">

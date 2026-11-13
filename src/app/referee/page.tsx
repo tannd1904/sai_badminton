@@ -22,6 +22,7 @@ import {
 import { MatchData, AuditActionType } from '../../types';
 import { useLanguage } from '../../lib/i18n';
 import { evaluateBwfMatch, evaluateBwfSet, isBwfSetPointFor } from '../../lib/bwf-rules';
+import { PageLoader } from '../../components/PageLoader';
 
 export default function RefereePage() {
   const { data: session } = useSession();
@@ -347,14 +348,16 @@ export default function RefereePage() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  if (loading && !activeMatch) {
+  if (loading) {
     return (
-      <div className="flex h-[70vh] items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-sai-cyan mx-auto mb-2" />
-          <p className="text-sm text-slate-400">Loading Referee Scoreboard...</p>
-        </div>
-      </div>
+      <PageLoader
+        title={locale === 'vi' ? 'Đang tải Bảng Điểm Trọng Tài...' : 'Loading Referee Scoreboard...'}
+        subtitle={
+          locale === 'vi'
+            ? `Đang đồng bộ danh sách trận đấu và điểm số của Sân ${selectedCourt}...`
+            : `Syncing match data for Court ${selectedCourt}...`
+        }
+      />
     );
   }
 
