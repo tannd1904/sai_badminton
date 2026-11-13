@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { publishEvent, CHANNELS } from '../../../lib/redis';
-import { MatchStatus } from '@prisma/client';
+import { MatchStatus, RoundType } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,6 +31,17 @@ export async function POST(req: NextRequest) {
           timerRemainingSeconds: 600,
           timerIsRunning: false,
           endTime: null,
+        },
+      });
+
+      // Clear auto-advanced teams on Playoff matches so brackets return to "Chưa xác định"
+      await prisma.match.updateMany({
+        where: {
+          roundType: { in: [RoundType.SEMI, RoundType.BRONZE, RoundType.FINAL] },
+        },
+        data: {
+          teamAId: null,
+          teamBId: null,
         },
       });
 

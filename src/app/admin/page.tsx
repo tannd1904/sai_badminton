@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { MatchData, ConflictViolation, TeamData, PlayerData } from '../../types';
 import { checkScheduleConflicts } from '../../lib/conflict-checker';
+import { evaluateBwfMatch } from '../../lib/bwf-rules';
 
 export default function AdminPage() {
   const { data: session } = useSession();
@@ -82,14 +83,36 @@ export default function AdminPage() {
   // Pairs tab category filter
   const [pairsCategoryFilter, setPairsCategoryFilter] = useState<'ALL' | 'XD' | 'MD'>('ALL');
 
-  // Override Form states
+  // Override Form states (supports up to 3 sets for BO3 + quick BTC entry)
   const [selectedOverrideMatchId, setSelectedOverrideMatchId] = useState<string>('');
-  const [overrideSetNum, setOverrideSetNum] = useState<number>(1);
-  const [overrideScoreA, setOverrideScoreA] = useState<number>(0);
-  const [overrideScoreB, setOverrideScoreB] = useState<number>(0);
+  const [overrideSets, setOverrideSets] = useState<Array<{ setNumber: number; teamAScore: number; teamBScore: number }>>([
+    { setNumber: 1, teamAScore: 0, teamBScore: 0 },
+    { setNumber: 2, teamAScore: 0, teamBScore: 0 },
+    { setNumber: 3, teamAScore: 0, teamBScore: 0 },
+  ]);
   const [overrideStatus, setOverrideStatus] = useState<string>('IN_PROGRESS');
   const [overrideWinnerId, setOverrideWinnerId] = useState<string>('');
   const [overrideCourt, setOverrideCourt] = useState<number>(1);
+  const [overrideReason, setOverrideReason] = useState<string>('Ghi nhận điểm bởi BTC');
+  const [overrideFilterRound, setOverrideFilterRound] = useState<'ALL' | 'GROUP' | 'PLAYOFF' | 'PENDING'>('ALL');
+  const [overrideSearch, setOverrideSearch] = useState<string>('');
+  const [savingOverride, setSavingOverride] = useState<boolean>(false);
+
+  const loadMatchIntoOverrideForm = useCallback((m: MatchData) => {
+    setSelectedOverrideMatchId(m.id);
+    const getSetScore = (num: number) => {
+      const found = m.sets?.find((s) => s.setNumber === num);
+      return {
+        setNumber: num,
+        teamAScore: found?.teamAScore ?? 0,
+        teamBScore: found?.teamBScore ?? 0,
+      };
+    };
+    setOverrideSets([getSetScore(1), getSetScore(2), getSetScore(3)]);
+    setOverrideCourt(m.courtNumber);
+    setOverrideStatus(m.status);
+    setOverrideWinnerId(m.winnerTeamId || '');
+  }, []);
 
   // Webhook form states
   const [webhookMatchCode, setWebhookMatchCode] = useState<string>('XD2');
@@ -118,12 +141,7 @@ export default function AdminPage() {
         setMatches(sData.matches || []);
         setConflicts(sData.conflicts || []);
         if (sData.matches && sData.matches.length > 0 && !selectedOverrideMatchId) {
-          setSelectedOverrideMatchId(sData.matches[0].id);
-          const first = sData.matches[0];
-          setOverrideScoreA(first.sets[0]?.teamAScore ?? 0);
-          setOverrideScoreB(first.sets[0]?.teamBScore ?? 0);
-          setOverrideCourt(first.courtNumber);
-          setOverrideStatus(first.status);
+          loadMatchIntoOverrideForm(sData.matches[0]);
         }
       }
 
@@ -137,7 +155,7 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedOverrideMatchId]);
+  }, [selectedOverrideMatchId, loadMatchIntoOverrideForm]);
 
   useEffect(() => {
     fetchScheduleAndConflicts();
@@ -398,34 +416,82 @@ export default function AdminPage() {
     setPendingConflictAction(null);
   };
 
-  // Submit emergency score override
+  // Submit emergency score override / BTC score recording
   const handleEmergencyOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOverrideMatchId) return;
+    const targetMatch = matches.find((m) => m.id === selectedOverrideMatchId);
+    if (!targetMatch) return;
+
+    const setsToSend = targetMatch.rulesMode === 'BO3' ? overrideSets : [overrideSets[0]];
 
     try {
+      setSavingOverride(true);
       const res = await fetch(`/api/matches/${selectedOverrideMatchId}/override`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          setNumber: overrideSetNum,
-          teamAScore: overrideScoreA,
-          teamBScore: overrideScoreB,
+          sets: setsToSend,
           status: overrideStatus,
-          winnerTeamId: overrideWinnerId || null,
+          winnerTeamId: overrideWinnerId || undefined,
           courtNumber: overrideCourt,
-          reason: 'Emergency Organizer Intervention via Control Center',
+          autoCompleteByBwf: overrideStatus === 'COMPLETED',
+          reason: overrideReason || 'Organizer Score Entry via Control Center',
         }),
       });
 
       if (res.ok) {
-        showNotification('✅ Emergency score override successfully applied and broadcast!');
-        fetchScheduleAndConflicts();
+        showNotification(`✅ Đã lưu điểm ${targetMatch.matchCode} và đồng bộ BXH & Sân!`);
+        await fetchScheduleAndConflicts();
       } else {
-        showNotification('Failed to apply override', 'error');
+        const errData = await res.json().catch(() => ({}));
+        showNotification(errData.error || 'Không thể lưu điểm', 'error');
       }
     } catch (err: any) {
       showNotification(err.message, 'error');
+    } finally {
+      setSavingOverride(false);
+    }
+  };
+
+  // One-click quick score recording for BTC from match list
+  const handleQuickRecordMatch = async (m: MatchData, scoreA: number, scoreB: number) => {
+    try {
+      setSavingOverride(true);
+      const payloadSets =
+        m.rulesMode === 'BO3'
+          ? [
+              { setNumber: 1, teamAScore: scoreA, teamBScore: scoreB },
+              { setNumber: 2, teamAScore: scoreA, teamBScore: scoreB },
+              { setNumber: 3, teamAScore: 0, teamBScore: 0 },
+            ]
+          : [{ setNumber: 1, teamAScore: scoreA, teamBScore: scoreB }];
+
+      const res = await fetch(`/api/matches/${m.id}/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sets: payloadSets,
+          status: 'COMPLETED',
+          autoCompleteByBwf: true,
+          reason: 'Quick Score Entry by Organizer',
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        showNotification(`✅ Đã ghi điểm ${m.matchCode} (${scoreA}-${scoreB}) & cập nhật BXH!`);
+        if (data.match && selectedOverrideMatchId === m.id) {
+          loadMatchIntoOverrideForm(data.match);
+        }
+        await fetchScheduleAndConflicts();
+      } else {
+        showNotification('Lỗi khi lưu nhanh tỉ số', 'error');
+      }
+    } catch (err: any) {
+      showNotification(err.message, 'error');
+    } finally {
+      setSavingOverride(false);
     }
   };
 
@@ -754,7 +820,7 @@ export default function AdminPage() {
           { key: 'SCHEDULE', label: 'Sắp xếp Sân & Lịch đấu', icon: Calendar },
           { key: 'ATHLETES', label: 'Quản lý Vận động viên', icon: UserPlus },
           { key: 'PAIRS', label: 'Sắp lại Cặp đấu', icon: Users },
-          { key: 'OVERRIDE', label: 'Ghi đè điểm khẩn cấp', icon: Shield },
+          { key: 'OVERRIDE', label: 'Ghi nhận & Ghi đè điểm (BTC)', icon: Shield },
           { key: 'WEBHOOK', label: 'Thông báo Webhook', icon: Send },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -1501,105 +1567,389 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 3: EMERGENCY SCORE OVERRIDE */}
-      {activeTab === 'OVERRIDE' && (
-        <div className="max-w-2xl bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow-xl backdrop-blur-md">
-          <h2 className="text-base font-bold text-white mb-2 flex items-center gap-2">
-            <Shield className="h-4 w-4 text-sai-cyan" />
-            <span>Emergency Match Score Override</span>
-          </h2>
-          <p className="text-xs text-slate-400 mb-6">
-            Authorized for Tournament Director and Ops Lead to correct scores, assign referees, or force match state.
-          </p>
+      {/* TAB 3: BTC SCORE ENTRY & EMERGENCY SCORE OVERRIDE */}
+      {activeTab === 'OVERRIDE' && (() => {
+        const selectedMatch = matches.find((m) => m.id === selectedOverrideMatchId) || null;
+        const activeSetsForEval = selectedMatch
+          ? selectedMatch.rulesMode === 'BO3'
+            ? overrideSets
+            : [overrideSets[0]]
+          : [];
+        const bwfPreview = selectedMatch
+          ? evaluateBwfMatch(
+              activeSetsForEval,
+              selectedMatch.rulesMode,
+              selectedMatch.teamAId,
+              selectedMatch.teamBId
+            )
+          : null;
 
-          <form onSubmit={handleEmergencyOverride} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-slate-300 mb-1">Target Match</label>
-              <select
-                value={selectedOverrideMatchId}
-                onChange={(e) => {
-                  setSelectedOverrideMatchId(e.target.value);
-                  const m = matches.find((item) => item.id === e.target.value);
-                  if (m) {
-                    setOverrideScoreA(m.sets[0]?.teamAScore ?? 0);
-                    setOverrideScoreB(m.sets[0]?.teamBScore ?? 0);
-                    setOverrideCourt(m.courtNumber);
-                    setOverrideStatus(m.status);
-                  }
-                }}
-                className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-mono"
-              >
-                {matches.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.matchCode} ({m.category}) - {m.teamA?.teamCode || 'Chưa XĐ'} vs {m.teamB?.teamCode || 'Chưa XĐ'} [Court {m.courtNumber}]
-                  </option>
-                ))}
-              </select>
+        const updateOverrideSetScore = (setNum: number, side: 'A' | 'B', val: number) => {
+          const clamped = Math.max(0, Math.min(30, isNaN(val) ? 0 : val));
+          setOverrideSets((prev) => {
+            const next = prev.map((s) =>
+              s.setNumber === setNum
+                ? { ...s, [side === 'A' ? 'teamAScore' : 'teamBScore']: clamped }
+                : s
+            );
+            if (selectedMatch) {
+              const evalList = selectedMatch.rulesMode === 'BO3' ? next : [next[0]];
+              const evalRes = evaluateBwfMatch(
+                evalList,
+                selectedMatch.rulesMode,
+                selectedMatch.teamAId,
+                selectedMatch.teamBId
+              );
+              if (evalRes.isCompleted) {
+                setOverrideStatus('COMPLETED');
+              } else if (next.some((s) => s.teamAScore > 0 || s.teamBScore > 0)) {
+                setOverrideStatus('IN_PROGRESS');
+              }
+            }
+            return next;
+          });
+        };
+
+        const filteredOverrideMatches = matches.filter((m) => {
+          if (overrideFilterRound === 'GROUP' && m.roundType !== 'GROUP') return false;
+          if (overrideFilterRound === 'PLAYOFF' && m.roundType === 'GROUP') return false;
+          if (overrideFilterRound === 'PENDING' && m.status === 'COMPLETED') return false;
+          if (overrideSearch.trim()) {
+            const q = overrideSearch.toLowerCase();
+            const hay = `${m.matchCode} ${m.teamA?.teamCode || ''} ${m.teamB?.teamCode || ''} ${m.teamA?.player1?.name || ''} ${m.teamA?.player2?.name || ''} ${m.teamB?.player1?.name || ''} ${m.teamB?.player2?.name || ''}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* LEFT: Detailed Score Entry / Override Form */}
+            <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow-xl backdrop-blur-md">
+              <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+                <Shield className="h-4 w-4 text-sai-cyan" />
+                <span>BTC Ghi nhận &amp; Ghi đè Điểm số</span>
+              </h2>
+              <p className="text-xs text-slate-400 mb-5">
+                Dùng khi thiết bị trọng tài gặp sự cố hoặc BTC cần nhập/chỉnh sửa trực tiếp điểm số &amp; đồng bộ ngay lên Sân trực tiếp, BXH và nhánh Playoff.
+              </p>
+
+              <form onSubmit={handleEmergencyOverride} className="space-y-4 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">Chọn trận đấu</label>
+                  <select
+                    value={selectedOverrideMatchId}
+                    onChange={(e) => {
+                      const m = matches.find((item) => item.id === e.target.value);
+                      if (m) loadMatchIntoOverrideForm(m);
+                    }}
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-mono"
+                  >
+                    {matches.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.matchCode} ({m.roundType}) - {m.teamA?.teamCode || 'Chưa XĐ'} vs {m.teamB?.teamCode || 'Chưa XĐ'} [{m.status}]
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedMatch && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-3 text-center">
+                      <div className="rounded-xl border border-sai-cyan/30 bg-sai-cyan/5 p-2">
+                        <div className="text-[10px] font-mono font-bold text-sai-cyan">
+                          Đội A • {selectedMatch.teamA?.teamCode || 'Chưa XĐ'}
+                        </div>
+                        <div className="text-xs font-black text-white mt-0.5 leading-snug">
+                          {selectedMatch.teamA
+                            ? `${selectedMatch.teamA.player1.name} & ${selectedMatch.teamA.player2.name}`
+                            : 'Chưa xác định'}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-sai-yellow/30 bg-sai-yellow/5 p-2">
+                        <div className="text-[10px] font-mono font-bold text-sai-yellow">
+                          Đội B • {selectedMatch.teamB?.teamCode || 'Chưa XĐ'}
+                        </div>
+                        <div className="text-xs font-black text-white mt-0.5 leading-snug">
+                          {selectedMatch.teamB
+                            ? `${selectedMatch.teamB.player1.name} & ${selectedMatch.teamB.player2.name}`
+                            : 'Chưa xác định'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Preset Score Chips for Set 1 */}
+                    {selectedMatch.rulesMode !== 'BO3' && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-slate-400 font-semibold mr-1">Nhập nhanh:</span>
+                        {[
+                          { label: 'A 21-15', a: 21, b: 15 },
+                          { label: 'A 21-18', a: 21, b: 18 },
+                          { label: 'A 22-20', a: 22, b: 20 },
+                          { label: 'B 15-21', a: 15, b: 21 },
+                          { label: 'B 18-21', a: 18, b: 21 },
+                          { label: 'Reset 0-0', a: 0, b: 0 },
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setOverrideSets((prev) =>
+                                prev.map((s) =>
+                                  s.setNumber === 1 ? { ...s, teamAScore: preset.a, teamBScore: preset.b } : s
+                                )
+                              );
+                              setOverrideStatus(preset.a === 0 && preset.b === 0 ? 'SCHEDULED' : 'COMPLETED');
+                              setOverrideWinnerId('');
+                            }}
+                            className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300 hover:border-sai-cyan hover:text-white transition"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Score Inputs (1 set for group, 3 sets for BO3 playoffs) */}
+                <div className="space-y-2.5">
+                  {(selectedMatch?.rulesMode === 'BO3' ? [1, 2, 3] : [1]).map((setNum) => {
+                    const sObj = overrideSets.find((s) => s.setNumber === setNum) || {
+                      setNumber: setNum,
+                      teamAScore: 0,
+                      teamBScore: 0,
+                    };
+                    return (
+                      <div key={setNum} className="grid grid-cols-7 items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-2.5">
+                        <span className="col-span-1 font-mono font-bold text-slate-400 text-[11px]">
+                          Set {setNum}
+                        </span>
+                        <div className="col-span-3">
+                          <input
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={sObj.teamAScore}
+                            onChange={(e) => updateOverrideSetScore(setNum, 'A', parseInt(e.target.value, 10))}
+                            className="w-full rounded-lg bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-center text-sai-cyan font-mono text-base font-black"
+                            aria-label={`Set ${setNum} Team A Score`}
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <input
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={sObj.teamBScore}
+                            onChange={(e) => updateOverrideSetScore(setNum, 'B', parseInt(e.target.value, 10))}
+                            className="w-full rounded-lg bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-center text-sai-yellow font-mono text-base font-black"
+                            aria-label={`Set ${setNum} Team B Score`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* BWF Winner Preview */}
+                {bwfPreview?.isCompleted && (
+                  <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-[11px] text-emerald-300">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <span>
+                      Theo luật BWF: <strong>{bwfPreview.winnerSide === 'A' ? selectedMatch?.teamA?.teamCode : selectedMatch?.teamB?.teamCode}</strong> thắng ({bwfPreview.setsWonA}-{bwfPreview.setsWonB} set).
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">Trạng thái trận</label>
+                    <select
+                      value={overrideStatus}
+                      onChange={(e) => setOverrideStatus(e.target.value)}
+                      className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-bold"
+                    >
+                      <option value="SCHEDULED">SCHEDULED (Chưa đấu)</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS (Đang đấu)</option>
+                      <option value="COMPLETED">COMPLETED (Hoàn thành)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">Sân thi đấu</label>
+                    <select
+                      value={overrideCourt}
+                      onChange={(e) => setOverrideCourt(parseInt(e.target.value, 10))}
+                      className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-bold"
+                    >
+                      <option value={1}>Sân 1</option>
+                      <option value={2}>Sân 2</option>
+                      <option value={3}>Sân 3</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">Đội thắng (tùy chọn)</label>
+                  <select
+                    value={overrideWinnerId}
+                    onChange={(e) => setOverrideWinnerId(e.target.value)}
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-semibold"
+                  >
+                    <option value="">Tự động tính theo tỉ số BWF</option>
+                    {selectedMatch?.teamA && (
+                      <option value={selectedMatch.teamA.id}>
+                        {selectedMatch.teamA.teamCode}: {selectedMatch.teamA.player1.name} &amp; {selectedMatch.teamA.player2.name}
+                      </option>
+                    )}
+                    {selectedMatch?.teamB && (
+                      <option value={selectedMatch.teamB.id}>
+                        {selectedMatch.teamB.teamCode}: {selectedMatch.teamB.player1.name} &amp; {selectedMatch.teamB.player2.name}
+                      </option>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">Ghi chú / Lý do</label>
+                  <input
+                    type="text"
+                    value={overrideReason}
+                    onChange={(e) => setOverrideReason(e.target.value)}
+                    className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-slate-200"
+                    placeholder="Ghi nhận điểm bởi BTC..."
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={savingOverride}
+                  className="w-full mt-2 rounded-xl bg-gradient-to-r from-sai-cyan to-blue-600 py-3 font-black text-slate-950 shadow-lg shadow-cyan-500/20 hover:brightness-110 transition disabled:opacity-50"
+                >
+                  {savingOverride ? 'Đang lưu...' : 'Lưu điểm & Đồng bộ Sân / BXH'}
+                </button>
+              </form>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Team A Score</label>
+            {/* RIGHT: Fast Match Directory for 1-click Load or Quick Score Recording */}
+            <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 p-5 rounded-3xl shadow-xl backdrop-blur-md">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="text-sm font-black text-white">Danh sách trận đấu (Chọn nhanh để ghi điểm)</h3>
+                  <p className="text-[11px] text-slate-400">Bấm vào trận bất kỳ để sửa chi tiết hoặc dùng nút chấm nhanh 21-15</p>
+                </div>
+                <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
+                  {[
+                    { k: 'ALL', l: 'Tất cả' },
+                    { k: 'GROUP', l: 'Vòng bảng' },
+                    { k: 'PLAYOFF', l: 'Playoff' },
+                    { k: 'PENDING', l: 'Chưa xong' },
+                  ].map((f) => (
+                    <button
+                      key={f.k}
+                      type="button"
+                      onClick={() => setOverrideFilterRound(f.k as any)}
+                      className={`px-2.5 py-1 rounded-lg transition ${
+                        overrideFilterRound === f.k
+                          ? 'bg-sai-cyan text-slate-950'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {f.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative mb-3">
+                <Search className="h-3.5 w-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={overrideScoreA}
-                  onChange={(e) => setOverrideScoreA(parseInt(e.target.value) || 0)}
-                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-mono text-base font-bold"
+                  type="text"
+                  value={overrideSearch}
+                  onChange={(e) => setOverrideSearch(e.target.value)}
+                  placeholder="Tìm mã trận hoặc tên VĐV (vd: Duy Tân, XD2, SF1)..."
+                  className="w-full rounded-xl bg-slate-950 border border-slate-800 pl-8 pr-3 py-2 text-xs text-white placeholder:text-slate-500"
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Team B Score</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={overrideScoreB}
-                  onChange={(e) => setOverrideScoreB(parseInt(e.target.value) || 0)}
-                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-mono text-base font-bold"
-                />
+              <div className="max-h-[560px] overflow-y-auto space-y-2 pr-1">
+                {filteredOverrideMatches.map((m) => {
+                  const isSelected = m.id === selectedOverrideMatchId;
+                  const s1 = m.sets?.[0] || { teamAScore: 0, teamBScore: 0 };
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => loadMatchIntoOverrideForm(m)}
+                      className={`cursor-pointer rounded-2xl border p-3 transition flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'border-sai-cyan bg-sai-cyan/10'
+                          : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-black text-white">{m.matchCode}</span>
+                          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">
+                            Sân {m.courtNumber} • {m.roundType}
+                          </span>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                              m.status === 'COMPLETED'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : m.status === 'IN_PROGRESS'
+                                ? 'bg-amber-500/20 text-amber-300'
+                                : 'bg-slate-800 text-slate-400'
+                            }`}
+                          >
+                            {m.status}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-200 flex items-center gap-2 flex-wrap">
+                          <span className={m.winnerTeamId && m.winnerTeamId === m.teamAId ? 'font-black text-emerald-300' : 'font-semibold'}>
+                            {m.teamA ? `${m.teamA.player1.name} & ${m.teamA.player2.name}` : 'Chưa xác định'}
+                          </span>
+                          <span className="font-mono font-black text-sai-cyan">
+                            {m.rulesMode === 'BO3'
+                              ? m.sets?.map((s) => `${s.teamAScore}-${s.teamBScore}`).join(' / ') || '0-0'
+                              : `${s1.teamAScore} - ${s1.teamBScore}`}
+                          </span>
+                          <span className={m.winnerTeamId && m.winnerTeamId === m.teamBId ? 'font-black text-emerald-300' : 'font-semibold'}>
+                            {m.teamB ? `${m.teamB.player1.name} & ${m.teamB.player2.name}` : 'Chưa xác định'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {m.teamAId && m.teamBId && (
+                        <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            disabled={savingOverride}
+                            onClick={() => handleQuickRecordMatch(m, 21, 15)}
+                            className="rounded-lg border border-sai-cyan/40 bg-sai-cyan/10 px-2 py-1 text-[10px] font-bold text-sai-cyan hover:bg-sai-cyan/20 transition disabled:opacity-40"
+                            title="Chấm nhanh Đội A thắng 21-15"
+                          >
+                            A 21-15
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingOverride}
+                            onClick={() => handleQuickRecordMatch(m, 15, 21)}
+                            className="rounded-lg border border-sai-yellow/40 bg-sai-yellow/10 px-2 py-1 text-[10px] font-bold text-sai-yellow hover:bg-sai-yellow/20 transition disabled:opacity-40"
+                            title="Chấm nhanh Đội B thắng 15-21"
+                          >
+                            B 21-15
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Match Status</label>
-                <select
-                  value={overrideStatus}
-                  onChange={(e) => setOverrideStatus(e.target.value)}
-                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-bold"
-                >
-                  <option value="SCHEDULED">SCHEDULED</option>
-                  <option value="IN_PROGRESS">IN_PROGRESS</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">Court Assignment</label>
-                <select
-                  value={overrideCourt}
-                  onChange={(e) => setOverrideCourt(parseInt(e.target.value))}
-                  className="w-full rounded-xl bg-slate-950 border border-slate-800 p-2.5 text-white font-bold"
-                >
-                  <option value={1}>Court 1</option>
-                  <option value={2}>Court 2</option>
-                  <option value={3}>Court 3</option>
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-4 rounded-xl bg-gradient-to-r from-sai-cyan to-blue-600 py-3 font-bold text-slate-950 shadow-lg shadow-cyan-500/20 hover:brightness-110 transition"
-            >
-              Apply Score Override & Broadcast
-            </button>
-          </form>
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* TAB 4: WEBHOOK DISPATCHER */}
       {activeTab === 'WEBHOOK' && (
