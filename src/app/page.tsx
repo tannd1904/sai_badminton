@@ -267,16 +267,12 @@ export default function HomePage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-bold">
-                <th className="py-2.5 px-3">Giờ / Lượt</th>
-                <th className="py-2.5 px-3">Mã Trận</th>
-                <th className="py-2.5 px-3">Sân</th>
-                <th className="py-2.5 px-3">Nội Dung</th>
-                <th className="py-2.5 px-3">Vòng</th>
+                <th className="py-2.5 px-3 whitespace-nowrap">Lượt</th>
+                <th className="py-2.5 px-3 whitespace-nowrap">Sân</th>
                 <th className="py-2.5 px-3">Đội A (VĐV)</th>
-                <th className="py-2.5 px-3 text-center">Tỉ Số</th>
+                <th className="py-2.5 px-3 text-center whitespace-nowrap">Tỉ Số</th>
                 <th className="py-2.5 px-3">Đội B (VĐV)</th>
-                <th className="py-2.5 px-3">Trạng Thái</th>
-                <th className="py-2.5 px-3">Đội Thắng</th>
+                <th className="py-2.5 px-3 text-right whitespace-nowrap">Trạng Thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -286,27 +282,32 @@ export default function HomePage() {
                   m.roundType === 'GROUP' && m.startTime
                     ? groupStartTimes.indexOf(new Date(m.startTime).getTime()) + 1
                     : 0;
-                const timeDisplay = m.startTime
-                  ? new Date(m.startTime).toLocaleTimeString('vi-VN', {
-                      timeZone: 'Asia/Ho_Chi_Minh',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : '--:--';
+                const roundLabel =
+                  luotIdx > 0
+                    ? `Lượt ${luotIdx}`
+                    : m.roundType === 'SEMI'
+                    ? `Bán kết ${m.category}`
+                    : m.roundType === 'BRONZE'
+                    ? `Hạng 3 ${m.category}`
+                    : `Chung kết ${m.category}`;
+                const isWinnerA = Boolean(m.winnerTeamId && m.teamAId && m.winnerTeamId === m.teamAId);
+                const isWinnerB = Boolean(m.winnerTeamId && m.teamBId && m.winnerTeamId === m.teamBId);
                 return (
                   <tr key={m.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-2.5 px-3">
-                      <div className="font-mono font-bold text-white">{timeDisplay}</div>
-                      {luotIdx > 0 && (
-                        <span className="inline-block rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-sai-yellow mt-0.5">
-                          Lượt {luotIdx}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 font-mono font-bold text-white">{m.matchCode}</td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       <span
-                        className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${
+                        className={`inline-block rounded-lg px-2 py-1 text-[11px] font-bold ${
+                          luotIdx > 0
+                            ? 'bg-slate-800 text-sai-yellow border border-slate-700'
+                            : 'bg-amber-950/60 text-amber-300 border border-amber-800/60'
+                        }`}
+                      >
+                        {roundLabel}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 whitespace-nowrap">
+                      <span
+                        className={`inline-block rounded-lg px-2 py-1 text-[11px] font-bold ${
                           m.courtNumber === 1
                             ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-800/50'
                             : m.courtNumber === 2
@@ -317,17 +318,22 @@ export default function HomePage() {
                         Sân {m.courtNumber}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-bold text-slate-300">{m.category}</td>
-                    <td className="py-2.5 px-3 text-slate-400">{m.roundType}</td>
-                    <td className="py-2.5 px-3 font-bold text-white">
+                    <td className="py-3 px-3 font-bold text-white">
                       {m.teamA ? (
                         <div>
-                          <div className="font-extrabold text-white text-xs">
+                          <div className={`font-extrabold text-xs sm:text-sm ${isWinnerA ? 'text-emerald-300' : 'text-white'}`}>
                             {m.teamA.player1.name} & {m.teamA.player2.name}
                           </div>
-                          <span className="inline-block rounded bg-sai-cyan/20 border border-sai-cyan/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan mt-0.5">
-                            {m.teamA.teamCode}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="inline-block rounded bg-sai-cyan/20 border border-sai-cyan/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-cyan">
+                              {m.teamA.teamCode}
+                            </span>
+                            {isWinnerA && (
+                              <span className="inline-block rounded bg-emerald-500/20 border border-emerald-500/40 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                                Thắng
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div>
@@ -341,18 +347,41 @@ export default function HomePage() {
                         </div>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-bold text-sm text-sai-yellow">
-                      {s1 && m.teamA && m.teamB ? `${s1.teamAScore} - ${s1.teamBScore}` : '--'}
+                    <td className="py-3 px-4 text-center font-mono font-black text-sm sm:text-base text-sai-yellow whitespace-nowrap">
+                      {m.teamA && m.teamB ? (
+                        m.sets.length > 1 ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            {m.sets.map((s) => (
+                              <span key={s.id} className="text-xs leading-tight">
+                                {s.teamAScore} - {s.teamBScore}
+                              </span>
+                            ))}
+                          </div>
+                        ) : s1 ? (
+                          `${s1.teamAScore} - ${s1.teamBScore}`
+                        ) : (
+                          '0 - 0'
+                        )
+                      ) : (
+                        <span className="text-slate-600">--</span>
+                      )}
                     </td>
-                    <td className="py-2.5 px-3 font-bold text-white">
+                    <td className="py-3 px-3 font-bold text-white">
                       {m.teamB ? (
                         <div>
-                          <div className="font-extrabold text-white text-xs">
+                          <div className={`font-extrabold text-xs sm:text-sm ${isWinnerB ? 'text-emerald-300' : 'text-white'}`}>
                             {m.teamB.player1.name} & {m.teamB.player2.name}
                           </div>
-                          <span className="inline-block rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-yellow mt-0.5">
-                            {m.teamB.teamCode}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="inline-block rounded bg-sai-yellow/20 border border-sai-yellow/40 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sai-yellow">
+                              {m.teamB.teamCode}
+                            </span>
+                            {isWinnerB && (
+                              <span className="inline-block rounded bg-emerald-500/20 border border-emerald-500/40 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                                Thắng
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div>
@@ -366,28 +395,22 @@ export default function HomePage() {
                         </div>
                       )}
                     </td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
                       <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
                           m.status === 'IN_PROGRESS'
-                            ? 'bg-emerald-500/20 text-emerald-400 animate-pulse'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse'
                             : m.status === 'COMPLETED'
-                            ? 'bg-amber-500/20 text-amber-300'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                             : 'bg-slate-800 text-slate-400'
                         }`}
                       >
-                        {m.status}
+                        {m.status === 'IN_PROGRESS'
+                          ? 'Đang đấu'
+                          : m.status === 'COMPLETED'
+                          ? 'Đã xong'
+                          : 'Chưa đấu'}
                       </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-emerald-400 font-bold">
-                      {m.winnerTeam ? (
-                        <div>
-                          <span>{m.winnerTeam.player1.name} & {m.winnerTeam.player2.name}</span>
-                          <span className="ml-1 text-[10px] font-mono text-slate-400">({m.winnerTeam.teamCode})</span>
-                        </div>
-                      ) : (
-                        '-'
-                      )}
                     </td>
                   </tr>
                 );
