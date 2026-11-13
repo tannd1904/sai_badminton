@@ -5,6 +5,44 @@ import { io, Socket } from 'socket.io-client';
 
 let globalSocket: Socket | null = null;
 
+function resolveSocketUrl(): string {
+  if (typeof window === 'undefined') {
+    return process.env.NEXT_PUBLIC_SOCKET_URL || '';
+  }
+
+  const configured = process.env.NEXT_PUBLIC_SOCKET_URL?.trim();
+  if (configured) {
+    try {
+      const parsed = new URL(configured);
+      const isLocalTarget = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+      const isBrowserLocal =
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      // Never connect a production domain browser to a baked localhost env URL
+      if (!isLocalTarget || isBrowserLocal) {
+        return configured;
+      }
+    } catch {
+      // Ignore malformed configured URL and fall back to same-origin
+    }
+  }
+
+  return window.location.origin;
+}
+
+function getOrCreateSocket(): Socket | null {
+  if (typeof window === 'undefined') return null;
+  if (!globalSocket) {
+    globalSocket = io(resolveSocketUrl(), {
+      transports: ['websocket', 'polling'],
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+      timeout: 10000,
+    });
+  }
+  return globalSocket;
+}
+
 export function useSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
@@ -17,19 +55,8 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-
-    if (!globalSocket) {
-      globalSocket = io(socketUrl, {
-        transports: ['websocket', 'polling'],
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: Infinity,
-        timeout: 10000,
-      });
-    }
-
-    const socket = globalSocket;
+    const socket = getOrCreateSocket();
+    if (!socket) return;
     socketRef.current = socket;
 
     function onConnect() {
@@ -51,7 +78,7 @@ export function useSocket() {
 
     function measureLatency() {
       const start = Date.now();
-      socket.emit('ping_check', () => {
+      socket?.emit('ping_check', () => {
         setLatency(Date.now() - start);
       });
     }
@@ -81,26 +108,38 @@ export function useSocket() {
   }, []);
 
   const subscribeToScore = useCallback((callback: (data: any) => void) => {
-    if (!globalSocket) return () => {};
-    globalSocket.on('score_update', callback);
+    const socket = getOrCreateSocket();
+    if (!socket) return () => {};
+    socket.on('score_update', callback);
     return () => {
-      globalSocket?.off('score_update', callback);
+      socket.off('score_update', callback);
     };
   }, []);
 
   const subscribeToMatchStatus = useCallback((callback: (data: any) => void) => {
-    if (!globalSocket) return () => {};
-    globalSocket.on('match_status_change', callback);
+    const socket = getOrCreateSocket();
+    if (!socket) return () => {};
+    socket.on('match_status_change', callback);
     return () => {
-      globalSocket?.off('match_status_change', callback);
+      socket.off('match_status_change', callback);
     };
   }, []);
 
   const subscribeToSchedule = useCallback((callback: (data: any) => void) => {
-    if (!globalSocket) return () => {};
-    globalSocket.on('schedule_update', callback);
+    const socket = getOrCreateSocket();
+    if (!socket) return () => {};
+    socket.on('schedule_update', callback);
     return () => {
-      globalSocket?.off('schedule_update', callback);
+      socket.off('schedule_update', callback);
+    };
+  }, []);
+
+  const subscribeToReconnect = useCallback((callback: () => void) => {
+    const socket = getOrCreateSocket();
+    if (!socket) return () => {};
+    socket.io.on('reconnect', callback);
+    return () => {
+      socket.io.off('reconnect', callback);
     };
   }, []);
 
@@ -117,6 +156,7 @@ export function useSocket() {
     subscribeToScore,
     subscribeToMatchStatus,
     subscribeToSchedule,
+    subscribeToReconnect,
   };
 }
 

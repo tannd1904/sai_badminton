@@ -9,7 +9,7 @@ import { getPlayoffSlotInfo } from '../../lib/playoff-utils';
 
 export default function TVScoreboardPage() {
   const { t, locale } = useLanguage();
-  const { subscribeToScore, subscribeToMatchStatus, subscribeToSchedule } = useSocket();
+  const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect } = useSocket();
   const [selectedCourt, setSelectedCourt] = useState<number | 'ALL'>('ALL');
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -60,12 +60,26 @@ export default function TVScoreboardPage() {
       fetchMatches();
     });
 
+    const unsubReconnect = subscribeToReconnect(() => {
+      fetchMatches();
+    });
+
     return () => {
       unsubScore();
       unsubStatus();
       unsubSchedule();
+      unsubReconnect();
     };
-  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, fetchMatches]);
+  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect, fetchMatches]);
+
+  // Safety-net polling only if WebSocket is disconnected
+  useEffect(() => {
+    if (isConnected) return;
+    const fallbackTimer = setInterval(() => {
+      fetchMatches();
+    }, 4000);
+    return () => clearInterval(fallbackTimer);
+  }, [isConnected, fetchMatches]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {

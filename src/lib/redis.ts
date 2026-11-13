@@ -1,7 +1,13 @@
 import Redis from 'ioredis';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-export const hasRedisConfigured = Boolean(process.env.REDIS_URL && process.env.REDIS_URL.trim().length > 0);
+const rawRedisUrl = process.env.REDIS_URL?.trim() || '';
+const isLocalRedisUrl =
+  rawRedisUrl.includes('localhost') || rawRedisUrl.includes('127.0.0.1');
+const REDIS_URL = rawRedisUrl || 'redis://localhost:6379';
+export const hasRedisConfigured = Boolean(
+  rawRedisUrl &&
+    !(process.env.NODE_ENV === 'production' && isLocalRedisUrl && process.env.FORCE_LOCAL_REDIS !== 'true')
+);
 
 // Global singletons to prevent multiple connections during hot reloads
 const globalForRedis = globalThis as unknown as {

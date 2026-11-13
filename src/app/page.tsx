@@ -19,7 +19,7 @@ import { useLanguage } from '../lib/i18n';
 import { getPlayoffSlotInfo } from '../lib/playoff-utils';
 
 export default function HomePage() {
-  const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule } = useSocket();
+  const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect } = useSocket();
   const { t, locale } = useLanguage();
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,12 +75,26 @@ export default function HomePage() {
       fetchMatches();
     });
 
+    const unsubReconnect = subscribeToReconnect(() => {
+      fetchMatches();
+    });
+
     return () => {
       unsubScore();
       unsubStatus();
       unsubSchedule();
+      unsubReconnect();
     };
-  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, fetchMatches]);
+  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect, fetchMatches]);
+
+  // Safety-net polling only if WebSocket is disconnected
+  useEffect(() => {
+    if (isConnected) return;
+    const fallbackTimer = setInterval(() => {
+      fetchMatches();
+    }, 4000);
+    return () => clearInterval(fallbackTimer);
+  }, [isConnected, fetchMatches]);
 
   // Sort matches chronologically (startTime asc, courtNumber asc, orderIndex asc)
   const sortedMatches = [...matches].sort((a, b) => {

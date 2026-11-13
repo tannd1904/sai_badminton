@@ -7,7 +7,7 @@ import { GroupStandingItem, MatchData, TeamData } from '../../types';
 import { useLanguage } from '../../lib/i18n';
 
 export default function StandingsPage() {
-  const { subscribeToScore, subscribeToMatchStatus, subscribeToSchedule } = useSocket();
+  const { isConnected, subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect } = useSocket();
   const { t, locale } = useLanguage();
   const [activeTab, setActiveTab] = useState<'XD' | 'MD'>('XD');
   const [standings, setStandings] = useState<{
@@ -91,13 +91,26 @@ export default function StandingsPage() {
     const unsubSchedule = subscribeToSchedule(() => {
       fetchStandings(true);
     });
+    const unsubReconnect = subscribeToReconnect(() => {
+      fetchStandings(true);
+    });
 
     return () => {
       unsubScore();
       unsubStatus();
       unsubSchedule();
+      unsubReconnect();
     };
-  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, fetchStandings]);
+  }, [subscribeToScore, subscribeToMatchStatus, subscribeToSchedule, subscribeToReconnect, fetchStandings]);
+
+  // Safety-net polling only if WebSocket is disconnected
+  useEffect(() => {
+    if (isConnected) return;
+    const fallbackTimer = setInterval(() => {
+      fetchStandings(true);
+    }, 5000);
+    return () => clearInterval(fallbackTimer);
+  }, [isConnected, fetchStandings]);
 
   const currentGroupA = activeTab === 'XD' ? standings.xdGroupA : standings.mdGroupA;
   const currentGroupB = activeTab === 'XD' ? standings.xdGroupB : standings.mdGroupB;
