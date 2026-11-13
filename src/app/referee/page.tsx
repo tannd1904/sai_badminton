@@ -39,6 +39,7 @@ export default function RefereePage() {
   const [showEndMatchModal, setShowEndMatchModal] = useState(false);
   const [showAutoWinModal, setShowAutoWinModal] = useState(false);
   const [matchWinnerCandidate, setMatchWinnerCandidate] = useState<string | null>(null);
+  const autoWinShownForMatchRef = useRef<string | null>(null);
 
   // Timer states (Stopwatch count-up)
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
@@ -209,6 +210,7 @@ export default function RefereePage() {
         else if (optB > 0) optB -= 1;
       }
       setShowAutoWinModal(false);
+      autoWinShownForMatchRef.current = null;
     } else if (action === 'SWITCH_COURT') {
       optSwitched = !optSwitched;
     }
@@ -255,7 +257,8 @@ export default function RefereePage() {
       sets: updatedSets,
     });
 
-    if (willAutoComplete) {
+    if (willAutoComplete && autoWinShownForMatchRef.current !== activeMatch.id) {
+      autoWinShownForMatchRef.current = activeMatch.id;
       setTimerRunning(false);
       soundManager.playVictoryFanfare();
       setShowAutoWinModal(true);
@@ -283,14 +286,15 @@ export default function RefereePage() {
           setAuditLogs((prev) => [result.auditLog, ...prev]);
         }
 
-        // Auto-determined winner via BWF rules -> show Auto-Winner banner/modal (do NOT ask referee to pick winner manually)
+        // Auto-determined winner via BWF rules -> show Auto-Winner modal ONCE per match completion
         if (result.match.status === 'COMPLETED') {
           setTimerRunning(false);
-          if (!willAutoComplete) {
-            soundManager.playVictoryFanfare();
-          }
           setShowEndMatchModal(false);
-          setShowAutoWinModal(true);
+          if (autoWinShownForMatchRef.current !== result.match.id) {
+            autoWinShownForMatchRef.current = result.match.id;
+            soundManager.playVictoryFanfare();
+            setShowAutoWinModal(true);
+          }
         }
       }
     } catch (err) {
@@ -319,6 +323,7 @@ export default function RefereePage() {
         setMatches((prev) => prev.map((m) => (m.id === result.match.id ? result.match : m)));
         setTimerRunning(false);
         setShowEndMatchModal(false);
+        autoWinShownForMatchRef.current = result.match.id;
         setShowAutoWinModal(true);
         soundManager.playVictoryFanfare();
       }
@@ -328,6 +333,7 @@ export default function RefereePage() {
   };
 
   const handleNextScheduledMatch = async () => {
+    autoWinShownForMatchRef.current = null;
     setShowAutoWinModal(false);
     setTimerRunning(false);
     setTimerSeconds(0);
@@ -411,6 +417,8 @@ export default function RefereePage() {
             onChange={(e) => {
               const selected = matches.find((m) => m.id === e.target.value);
               if (selected) {
+                autoWinShownForMatchRef.current = selected.status === 'COMPLETED' ? selected.id : null;
+                setShowAutoWinModal(false);
                 setActiveMatch(selected);
                 const initialSecs = selected.timerRemainingSeconds && selected.timerRemainingSeconds < 600 ? selected.timerRemainingSeconds : 0;
                 setTimerSeconds(initialSecs);
@@ -862,11 +870,29 @@ export default function RefereePage() {
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3 py-0.5 text-xs font-mono font-black text-emerald-300">
                   {resolvedWinnerTeam.teamCode}
                 </div>
-                <div className="mt-3 flex items-center justify-center gap-2 font-mono text-2xl font-black text-white">
-                  <span className="text-sai-cyan">{currentSet.teamAScore}</span>
-                  <span className="text-slate-600">-</span>
-                  <span className="text-sai-yellow">{currentSet.teamBScore}</span>
-                </div>
+                {activeMatch.rulesMode === 'BO3' ? (
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    {activeMatch.sets
+                      .filter((s) => s.teamAScore > 0 || s.teamBScore > 0 || s.isFinished)
+                      .map((s) => (
+                        <span
+                          key={s.setNumber}
+                          className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-1 font-mono text-sm font-black text-white"
+                        >
+                          <span className="text-slate-400 mr-1.5 text-xs">S{s.setNumber}:</span>
+                          <span className="text-sai-cyan">{s.teamAScore}</span>
+                          <span className="text-slate-600 mx-1">-</span>
+                          <span className="text-sai-yellow">{s.teamBScore}</span>
+                        </span>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center justify-center gap-2 font-mono text-2xl font-black text-white">
+                    <span className="text-sai-cyan">{currentSet.teamAScore}</span>
+                    <span className="text-slate-600">-</span>
+                    <span className="text-sai-yellow">{currentSet.teamBScore}</span>
+                  </div>
+                )}
               </div>
             )}
 
